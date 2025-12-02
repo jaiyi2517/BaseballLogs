@@ -148,7 +148,7 @@
 
         <!-- Tools Section -->
         <section class="flex flex-wrap justify-between items-end gap-4">
-            <div class="flex gap-4 items-center flex-wrap">
+            <div class="flex gap-4 items-center">
                 <button @click="showForm = true; isEditing = false; resetForm()" class="btn-primary flex items-center gap-2">
                     <span>✎</span>
                     <span class="inline sm:hidden">新增</span>
@@ -158,16 +158,10 @@
                     <label class="btn-secondary cursor-pointer flex items-center gap-2">
                         <span>✉︎</span>
                         <span class="inline sm:hidden">匯入</span>
-                        <span class="hidden sm:inline">匯入 (CSV/JSON)</span>
-                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls, .json" class="hidden">
+                        <span class="hidden sm:inline">匯入 (CSV/XLSX)</span>
+                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls" class="hidden">
                     </label>
                 </div>
-                <button @click="exportData" class="btn-tertiary flex items-center gap-2" title="匯出 JSON 備份檔"> 
-                    <span>⤓</span>
-                    <span class="inline sm:hidden">備份</span>
-                    <span class="hidden sm:inline">匯出備份</span> 
-                </button>
-                <button @click="showHelp = true" class="btn-icon text-lg font-serif font-semibold" title="查看檔案格式說明">?</button>
             </div>
             
             <div class="flex gap-2 items-center w-full md:w-auto">
@@ -175,7 +169,7 @@
                     <span>🗑️</span> <span class="hidden sm:inline">刪除選取</span> ({{ selectedIds.size }})
                 </button>
                 <div class="relative flex-grow md:flex-grow-0">
-                    <input v-model="searchQuery" type="text" placeholder="搜尋..." class="bg-white px-4 py-2 rounded-full border border-primary/10 focus:outline-none focus:ring-1 focus:ring-sage w-full md:w-64 font-medium">
+                    <input v-model="searchQuery" type="text" placeholder="搜尋對手、球場或比賽..." class="bg-white px-4 py-2 rounded-full border border-primary/10 focus:outline-none focus:ring-1 focus:ring-sage w-full md:w-64 font-medium">
                 </div>
             </div>
         </section>
@@ -253,6 +247,34 @@
             </div>
         </section>
 
+        <!-- Bottom Data Management Section -->
+        <footer class="mt-8 border-t border-primary/10 pt-8 pb-12">
+            <div class="text-center mb-4">
+                <h4 class="font-serif font-bold text-primary/70 mb-1">資料管理區</h4>
+                <p class="text-xs text-primary/50">Data Management</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4">
+                <div class="relative group">
+                    <label class="btn-tertiary cursor-pointer flex items-center gap-2">
+                        <span>↪︎</span>
+                        <span class="inline sm:hidden">還原</span>
+                        <span class="hidden sm:inline">還原備份 (JSON)</span>
+                        <input type="file" @change="handleFileUpload" accept=".json" class="hidden">
+                    </label>
+                </div>
+                <button @click="exportData" class="btn-tertiary flex items-center gap-2" title="匯出 JSON 備份檔"> 
+                    <span>⎙</span>
+                    <span class="inline sm:hidden">備份</span>
+                    <span class="hidden sm:inline">匯出備份</span> 
+                </button>
+                <button @click="showHelp = true" class="btn-tertiary flex items-center gap-2" title="查看檔案格式說明"> 
+                    <span>ℹ︎</span>
+                    <span class="inline sm:hidden">說明</span>
+                    <span class="hidden sm:inline">匯入說明</span> 
+                </button>
+            </div>
+        </footer>
+
     </main>
 
     <!-- Modal Form (Same) -->
@@ -318,7 +340,7 @@
                 <div class="bg-sage/10 p-4 rounded mb-4">
                     <h4 class="font-bold text-sage mb-2">資料備份與還原</h4>
                     <p class="mb-2"><strong>匯出備份：</strong> 點擊「匯出備份」按鈕，系統會下載一個 <code>.json</code> 檔案。請妥善保存此檔案，它是您所有紀錄的備份。</p>
-                    <p><strong>還原備份：</strong> 點擊「匯入」按鈕並選擇您的 <code>.json</code> 備份檔，即可將資料還原。</p>
+                    <p><strong>還原備份：</strong> 點擊「還原備份」按鈕並選擇您的 <code>.json</code> 備份檔，即可將資料還原。</p>
                 </div>
 
                 <p>若使用 Excel (.xlsx) 或 CSV 匯入，請確保第一列包含以下欄位：</p>
