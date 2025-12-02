@@ -54,8 +54,9 @@
         .btn-secondary {
             @apply bg-slate text-white px-4 py-2 rounded shadow hover:bg-opacity-70 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
         }
+        /* Updated: More subtle/transparent style for bottom buttons */
         .btn-tertiary {
-            @apply bg-white text-primary border border-primary/20 px-4 py-2 rounded shadow hover:bg-primary/5 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+            @apply bg-white/40 text-primary/70 border border-primary/10 px-4 py-2 rounded hover:bg-white hover:text-primary hover:shadow-sm hover:border-primary/20 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center backdrop-blur-[2px];
         }
         .btn-danger {
             @apply bg-accent text-white px-4 py-2 rounded shadow hover:bg-opacity-90 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
@@ -68,6 +69,7 @@
         }
         .custom-scroll::-webkit-scrollbar {
             height: 8px;
+            width: 8px;
         }
         .custom-scroll::-webkit-scrollbar-track {
             background: #f1f1f1; 
@@ -75,6 +77,9 @@
         .custom-scroll::-webkit-scrollbar-thumb {
             background: #ccc; 
             border-radius: 4px;
+        }
+        .modal-body {
+            @apply flex-1 overflow-y-auto custom-scroll min-h-0;
         }
         input[type="checkbox"] {
             accent-color: #8CA694;
@@ -258,7 +263,7 @@
                     <label class="btn-tertiary cursor-pointer flex items-center gap-2">
                         <span>↪︎</span>
                         <span class="inline sm:hidden">還原</span>
-                        <span class="hidden sm:inline">還原備份 (JSON)</span>
+                        <span class="hidden sm:inline">還原備份 (json)</span>
                         <input type="file" @change="handleFileUpload" accept=".json" class="hidden">
                     </label>
                 </div>
