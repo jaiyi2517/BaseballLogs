@@ -111,7 +111,7 @@
     <!-- Main Content -->
     <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
         
-        <!-- Dashboard Section: Changed to grid-cols-2 for mobile side-by-side -->
+        <!-- Dashboard Section -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <div class="card col-span-1 flex flex-col justify-center items-center text-center p-4">
                 <h3 class="font-serif text-base md:text-lg text-primary/60 mb-2 font-bold">{{ currentTab === 'batting' ? '平均打擊率 (AVG)' : '防禦率 (ERA)' }}</h3>
@@ -531,10 +531,14 @@
 
             // Firebase Logic
             const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication Error:", error);
                 }
             };
 
@@ -821,9 +825,9 @@
                     const ctxDist1 = document.getElementById('distChart1');
                     const ctxDist2 = document.getElementById('distChart2');
                     
-                    if (trendChartInstance) trendChartInstance.destroy();
-                    if (distChart1Instance) distChart1Instance.destroy();
-                    if (distChart2Instance) distChart2Instance.destroy();
+                    if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+                    if (distChart1Instance) { distChart1Instance.destroy(); distChart1Instance = null; }
+                    if (distChart2Instance) { distChart2Instance.destroy(); distChart2Instance = null; }
 
                     if (!ctxTrend) return; // Only trend chart is guaranteed to be there initially
 
