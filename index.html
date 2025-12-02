@@ -148,7 +148,7 @@
 
         <!-- Tools Section -->
         <section class="flex flex-wrap justify-between items-end gap-4">
-            <div class="flex gap-4 items-center">
+            <div class="flex gap-4 items-center flex-wrap">
                 <button @click="showForm = true; isEditing = false; resetForm()" class="btn-primary flex items-center gap-2">
                     <span>✎</span>
                     <span class="inline sm:hidden">新增</span>
@@ -158,15 +158,16 @@
                     <label class="btn-secondary cursor-pointer flex items-center gap-2">
                         <span>✉︎</span>
                         <span class="inline sm:hidden">匯入</span>
-                        <span class="hidden sm:inline">匯入 (CSV/XLSX)</span>
-                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls" class="hidden">
+                        <span class="hidden sm:inline">匯入 (CSV/JSON)</span>
+                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls, .json" class="hidden">
                     </label>
                 </div>
-                <button @click="showHelp = true" class="btn-tertiary flex items-center gap-2" title="查看檔案格式說明"> 
-                    <span>ℹ︎</span>
-                    <span class="inline sm:hidden">說明</span>
-                    <span class="hidden sm:inline">匯入說明</span>
+                <button @click="exportData" class="btn-tertiary flex items-center gap-2" title="匯出 JSON 備份檔"> 
+                    <span>⤓</span>
+                    <span class="inline sm:hidden">備份</span>
+                    <span class="hidden sm:inline">匯出備份</span> 
                 </button>
+                <button @click="showHelp = true" class="btn-icon text-lg font-serif font-semibold" title="查看檔案格式說明">?</button>
             </div>
             
             <div class="flex gap-2 items-center w-full md:w-auto">
@@ -174,7 +175,7 @@
                     <span>🗑️</span> <span class="hidden sm:inline">刪除選取</span> ({{ selectedIds.size }})
                 </button>
                 <div class="relative flex-grow md:flex-grow-0">
-                    <input v-model="searchQuery" type="text" placeholder="搜尋對手、球場或比賽..." class="bg-white px-4 py-2 rounded-full border border-primary/10 focus:outline-none focus:ring-1 focus:ring-sage w-full md:w-64 font-medium">
+                    <input v-model="searchQuery" type="text" placeholder="搜尋..." class="bg-white px-4 py-2 rounded-full border border-primary/10 focus:outline-none focus:ring-1 focus:ring-sage w-full md:w-64 font-medium">
                 </div>
             </div>
         </section>
@@ -219,7 +220,7 @@
                             <td :colspan="displayColumns.length + 6" class="p-12 text-center text-primary/40 italic font-serif">
                                 尚未有數據，請新增紀錄或匯入資料。<br>
                                 <span class="text-xs text-sage mt-2 block" v-if="isFirebaseMode">系統已連接雲端資料庫，資料將自動同步。</span>
-                                <span class="text-xs text-slate mt-2 block" v-else>目前為本地模式，資料僅儲存於此裝置。</span>
+                                <span class="text-xs text-slate mt-2 block" v-else>目前為本地模式，資料儲存於瀏覽器中。建議定期點擊「匯出備份」保存資料。</span>
                             </td>
                         </tr>
                     </tbody>
@@ -254,14 +255,13 @@
 
     </main>
 
-    <!-- Modal Form, Help Modal, Custom Dialog... (Same structure) -->
+    <!-- Modal Form (Same) -->
     <div v-if="showForm" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-pop-in">
             <div class="p-6 border-b border-primary/10 flex justify-between items-center">
                 <h2 class="font-serif text-2xl font-semibold text-primary">{{ isEditing ? '編輯紀錄' : '新增紀錄' }} - {{ currentTab === 'batting' ? '打擊' : '投球' }}</h2>
                 <button @click="showForm = false" class="text-2xl text-primary/50 hover:text-primary">&times;</button>
             </div>
-            
             <form @submit.prevent="submitForm" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Common Fields -->
                 <div class="md:col-span-2 grid grid-cols-2 gap-4">
@@ -282,16 +282,13 @@
                         <input v-model="formData.opponent" type="text" placeholder="對手隊名" class="input-field">
                     </div>
                 </div>
-
                 <div class="md:col-span-2 border-t border-primary/10 my-2"></div>
-
                 <template v-if="currentTab === 'batting'">
                     <div v-for="field in battingFields" :key="field.key">
                         <label class="block text-xs font-bold text-primary/60 mb-1">{{ field.label }}</label>
                         <input v-model.number="formData[field.key]" type="number" min="0" class="input-field bg-gray-50/50">
                     </div>
                 </template>
-
                 <template v-else>
                     <div v-for="field in pitchingFields" :key="field.key">
                         <label class="block text-xs font-bold text-primary/60 mb-1">
@@ -301,7 +298,6 @@
                         <input v-model.number="formData[field.key]" type="number" step="0.1" min="0" class="input-field bg-gray-50/50">
                     </div>
                 </template>
-
                 <div class="md:col-span-2 mt-4 flex gap-4">
                     <button type="submit" class="flex-1 btn-primary">{{ isEditing ? '更新' : '儲存' }}</button>
                     <button type="button" @click="showForm = false" class="flex-1 py-2 rounded text-primary hover:bg-primary/10 transition font-medium">取消</button>
@@ -310,16 +306,22 @@
         </div>
     </div>
 
-    <!-- Help Modal -->
+    <!-- Help Modal (Updated for JSON) -->
     <div v-if="showHelp" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-pop-in">
             <div class="p-6 border-b border-primary/10 flex justify-between items-center flex-shrink-0">
-                <h2 class="font-serif text-xl font-semibold text-primary">匯入檔案格式說明</h2>
+                <h2 class="font-serif text-xl font-semibold text-primary">檔案功能說明</h2>
                 <button @click="showHelp = false" class="text-2xl text-primary/50 hover:text-primary">&times;</button>
             </div>
             
             <div class="p-6 text-sm text-primary/80 modal-body space-y-4">
-                <p>請確保您的 Excel (.xlsx) 或 CSV 檔案第一列包含以下<strong>欄位標題</strong>。</p>
+                <div class="bg-sage/10 p-4 rounded mb-4">
+                    <h4 class="font-bold text-sage mb-2">資料備份與還原</h4>
+                    <p class="mb-2"><strong>匯出備份：</strong> 點擊「匯出備份」按鈕，系統會下載一個 <code>.json</code> 檔案。請妥善保存此檔案，它是您所有紀錄的備份。</p>
+                    <p><strong>還原備份：</strong> 點擊「匯入」按鈕並選擇您的 <code>.json</code> 備份檔，即可將資料還原。</p>
+                </div>
+
+                <p>若使用 Excel (.xlsx) 或 CSV 匯入，請確保第一列包含以下欄位：</p>
                 <div class="bg-primary/5 p-4 rounded">
                     <h4 class="font-bold text-sage mb-2">通用欄位 (建議)</h4>
                     <p class="leading-relaxed">
@@ -329,7 +331,8 @@
                         • <strong>對手 (Opponent)</strong>
                     </p>
                 </div>
-                <div v-if="currentTab === 'batting'">
+                <!-- ... (Column tables same as before) ... -->
+                 <div v-if="currentTab === 'batting'">
                     <h4 class="font-bold text-sage mb-2 mt-4">打擊數據欄位</h4>
                     <table class="w-full text-left border-collapse">
                         <tr class="border-b border-primary/10"><th class="py-1">代碼</th><th class="py-1">中文說明</th></tr>
@@ -404,7 +407,6 @@
             let appId = 'default-app-id';
 
             try {
-                // Try to parse global variable from AI environment
                 if (typeof __firebase_config !== 'undefined') {
                     const firebaseConfig = JSON.parse(__firebase_config);
                     const app = initializeApp(firebaseConfig);
@@ -454,6 +456,7 @@
             };
             const formData = ref({ ...defaultFormData });
 
+            // Fields (Same as before)
             const battingFields = [
                 { key: 'PA', label: '打席 (PA)' }, { key: 'AB', label: '打數 (AB)' },
                 { key: 'H', label: '安打 (H)' }, { key: 'B2', label: '二壘打 (2B)' },
@@ -462,7 +465,6 @@
                 { key: 'SO', label: '三振 (SO)' }, { key: 'SB', label: '盜壘 (SB)' },
                 { key: 'SF', label: '高飛犧牲 (SF)' }
             ];
-
             const pitchingFields = [
                 { key: 'W', label: '勝 (W)' }, { key: 'L', label: '敗 (L)' },
                 { key: 'IP', label: '局數 (IP)' }, { key: 'H_p', label: '被安打 (H)' },
@@ -471,13 +473,10 @@
                 { key: 'HR_p', label: '被全壘打 (HR)' }
             ];
 
-            // Computed
+            // Computed Properties (Same as before)
             const displayColumns = computed(() => {
-                if (currentTab.value === 'batting') {
-                    return [{key:'AB',label:'AB'},{key:'H',label:'H'},{key:'HR',label:'HR'},{key:'RBI',label:'RBI'},{key:'AVG',label:'AVG'},{key:'OPS',label:'OPS'}];
-                } else {
-                    return [{key:'IP',label:'IP'},{key:'H_p',label:'H'},{key:'ER',label:'ER'},{key:'SO_p',label:'K'},{key:'BB_p',label:'BB'},{key:'ERA',label:'ERA'},{key:'WHIP',label:'WHIP'}];
-                }
+                if (currentTab.value === 'batting') return [{key:'AB',label:'AB'},{key:'H',label:'H'},{key:'HR',label:'HR'},{key:'RBI',label:'RBI'},{key:'AVG',label:'AVG'},{key:'OPS',label:'OPS'}];
+                return [{key:'IP',label:'IP'},{key:'H_p',label:'H'},{key:'ER',label:'ER'},{key:'SO_p',label:'K'},{key:'BB_p',label:'BB'},{key:'ERA',label:'ERA'},{key:'WHIP',label:'WHIP'}];
             });
 
             const filteredLogs = computed(() => {
@@ -547,7 +546,6 @@
                         }
                     });
                 } else {
-                    // Local Storage Fallback
                     const saved = localStorage.getItem('baseball_logs');
                     if (saved) logs.value = JSON.parse(saved);
                     else {
@@ -559,10 +557,95 @@
                 renderCharts();
             });
 
-            // Actions
+            // Export Data Function
+            function exportData() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs.value));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "baseball_data_backup.json");
+                document.body.appendChild(downloadAnchorNode); // required for firefox
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            }
+
+            // Updated File Upload Handler
+            function handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    let newLogs = [];
+                    
+                    // Handle JSON
+                    if (file.name.endsWith('.json')) {
+                        try {
+                            const json = JSON.parse(e.target.result);
+                            if (Array.isArray(json)) {
+                                newLogs = json;
+                            } else {
+                                showAlert('錯誤', 'JSON 格式不正確');
+                                return;
+                            }
+                        } catch(err) {
+                            showAlert('錯誤', '無法解析 JSON 檔案');
+                            return;
+                        }
+                    } 
+                    // Handle Excel/CSV
+                    else {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
+                        if(!json.length) { showAlert('錯誤','無資料'); return; }
+                        
+                        newLogs = json.map(row => {
+                            return { 
+                                type: currentTab.value, 
+                                date: row['日期'] || row['Date'] || new Date().toISOString().split('T')[0],
+                                gameName: row['比賽名稱'] || row['Game'] || '匯入',
+                                stadium: row['球場'] || row['Stadium'] || '',
+                                opponent: row['對手'] || row['Opponent'] || '',
+                                PA: row['PA']||0, AB: row['AB']||0, H: row['H']||0, B2: row['2B']||0, B3: row['3B']||0, HR: row['HR']||0, RBI: row['RBI']||0, BB: row['BB']||0, SO: row['SO']||0, SF: row['SF']||0, SB: row['SB']||0,
+                                IP: row['IP']||0, W: row['W']||0, L: row['L']||0, SV: row['SV']||0, H_p: row['H']||0, R: row['R']||0, ER: row['ER']||0, BB_p: row['BB']||0, SO_p: row['SO']||0, HR_p: row['HR']||0
+                            }; 
+                        });
+                    }
+
+                    if(isFirebaseAvailable) {
+                        const batch = writeBatch(db);
+                        newLogs.forEach(l => {
+                            // Ensure clean data for Firestore
+                            const { id, ...cleanData } = l; 
+                            batch.set(doc(collection(db,'artifacts',appId,'public','data','baseball_logs')), cleanData);
+                        });
+                        await batch.commit();
+                    } else {
+                        // Local Mode: Merge strategy (Append new logs)
+                        // If JSON import often implies restore, we might want to replace or merge. 
+                        // Here we append new items with new IDs.
+                        newLogs.forEach(l => { 
+                            // If it's a JSON restore, it might already have IDs, but best to regenerate for local consistency
+                            l.id = Date.now() + Math.random(); 
+                            logs.value.push(l); 
+                        });
+                        localStorage.setItem('baseball_logs', JSON.stringify(logs.value));
+                    }
+                    showAlert('成功', `已匯入/還原 ${newLogs.length} 筆資料`);
+                    event.target.value = '';
+                };
+                
+                if (file.name.endsWith('.json')) {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
+            }
+
+            // CRUD Operations (Same as before)
             async function submitForm() {
                 const payload = { ...formData.value, type: currentTab.value };
-                
                 if (isFirebaseAvailable && user.value) {
                     try {
                         const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'baseball_logs');
@@ -576,7 +659,6 @@
                         }
                     } catch (e) { showAlert('錯誤', '雲端儲存失敗'); }
                 } else {
-                    // Local Storage
                     if (isEditing.value) {
                         const idx = logs.value.findIndex(l => l.id === payload.id);
                         if (idx !== -1) logs.value[idx] = payload;
@@ -618,14 +700,9 @@
                 });
             }
 
-            // Utils
-            function convertIPtoOuts(ip) {
-                const s = String(ip).split('.');
-                return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0);
-            }
-            function convertOutsToIP(outs) {
-                return (outs % 3 === 0) ? Math.floor(outs/3) : parseFloat(`${Math.floor(outs/3)}.${outs%3}`);
-            }
+            // Utils (Same as before)
+            function convertIPtoOuts(ip) { const s = String(ip).split('.'); return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0); }
+            function convertOutsToIP(outs) { return (outs % 3 === 0) ? Math.floor(outs/3) : parseFloat(`${Math.floor(outs/3)}.${outs%3}`); }
             function calculateStats(log) {
                 if (log.type === 'batting') {
                     const avg = log.AB ? log.H / log.AB : 0;
@@ -657,8 +734,6 @@
                     return outs ? er*9/(outs/3) : 0;
                 }
             }
-            
-            // Other logic (sort, edit, etc.)
             function sortBy(k){ logs.value.sort((a,b)=>(b[k]||0)-(a[k]||0)); }
             function editLog(l){ formData.value={...l}; currentTab.value=l.type; isEditing.value=true; showForm.value=true; }
             function resetForm(){ formData.value={...defaultFormData, date: new Date().toISOString().split('T')[0]}; }
@@ -668,49 +743,7 @@
             function showAlert(t,m,e=false){ dialog.value={show:true,title:t,message:m,icon:e?'❌':'✅',isConfirm:false,confirmText:'好',onConfirm:null}; }
             function handleDialogConfirm(){ if(dialog.value.onConfirm) dialog.value.onConfirm(); dialog.value.show=false; }
 
-            // File Upload logic handles local array append for visual consistency even in FB mode, or batched writes? 
-            // Simplified: Reusing logic.
-            function handleFileUpload(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
-                    if(!json.length) { showAlert('錯誤','無資料'); return; }
-                    
-                    const newLogs = json.map(row => {
-                        // Mapping logic (simplified for brevity, assume logic from prev turn)
-                        // ... (Use same mapping logic)
-                        return { 
-                            type: currentTab.value, 
-                            date: row['日期'] || row['Date'] || new Date().toISOString().split('T')[0],
-                            gameName: row['比賽名稱'] || row['Game'] || '匯入',
-                            stadium: row['球場'] || row['Stadium'] || '',
-                            opponent: row['對手'] || row['Opponent'] || '',
-                            // Basic stats mapping... (Simplified)
-                            PA: row['PA']||0, AB: row['AB']||0, H: row['H']||0, BB: row['BB']||0,
-                            IP: row['IP']||0, ER: row['ER']||0, H_p: row['H']||0, BB_p: row['BB']||0
-                            // Note: In full code, ensure all fields mapped correctly
-                        }; 
-                    });
-
-                    if(isFirebaseAvailable) {
-                        const batch = writeBatch(db);
-                        newLogs.forEach(l => batch.set(doc(collection(db,'artifacts',appId,'public','data','baseball_logs')), l));
-                        await batch.commit();
-                    } else {
-                        newLogs.forEach(l => { l.id = Date.now() + Math.random(); logs.value.push(l); });
-                        localStorage.setItem('baseball_logs', JSON.stringify(logs.value));
-                    }
-                    showAlert('成功', `匯入 ${newLogs.length} 筆`);
-                    event.target.value = '';
-                };
-                reader.readAsArrayBuffer(file);
-            }
-
+            // Chart Rendering
             function renderCharts() {
                 nextTick(() => {
                     const ctxTrend = document.getElementById('trendChart');
@@ -723,9 +756,11 @@
 
                     if (!ctxTrend) return;
 
-                    // Chart logic (Same as before)
-                    // ... (Trend chart setup)
+                    const primaryColor = '#8CA694';
+                    const secondaryColor = '#88A6B0';
+
                     let labels, mainData, chartType;
+
                     if (chartMode.value === 'trend') {
                          const data = filteredLogs.value.slice().reverse();
                          labels = data.map(l => l.date.slice(5));
@@ -750,8 +785,6 @@
                     });
 
                     if (ctxDist1 && ctxDist2) {
-                        // Dist Charts logic (Same as before)
-                        // ...
                         const d = filteredLogs.value;
                         let d1, l1, d2, l2;
                         if(currentTab.value==='batting') {
@@ -776,7 +809,7 @@
                 currentTab, showForm, showHelp, isEditing, formData, searchQuery, logs, selectedIds, chartMode,
                 battingFields, pitchingFields, displayColumns, filteredLogs, mainStat, secondaryStat, isFirebaseMode,
                 submitForm, editLog, deleteLog, deleteSelected, resetForm, handleFileUpload, calculateTotal, sortBy,
-                dialog, handleDialogConfirm
+                dialog, handleDialogConfirm, exportData
             };
         }
     }).mount('#app');
