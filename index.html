@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小魏的野球數據</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#F9F4EB',
+                        primary: '#736357',
+                        sage: '#8CA694',
+                        slate: '#88A6B0',
+                        accent: '#D97C6E'
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <style type="text/tailwindcss">
+        body {
+            background-color: #F9F4EB;
+            color: #736357;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23736357' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .btn-primary {
+            @apply bg-sage text-white px-4 py-2 rounded shadow hover:bg-opacity-90 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+        }
+        .btn-secondary {
+            @apply bg-slate text-white px-4 py-2 rounded shadow hover:bg-opacity-70 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+        }
+        .btn-tertiary {
+            @apply bg-white text-primary border border-primary/20 px-4 py-2 rounded shadow hover:bg-primary/5 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+        }
+        .btn-danger {
+            @apply bg-accent text-white px-4 py-2 rounded shadow hover:bg-opacity-90 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+        }
+        .card {
+            @apply bg-white shadow-md rounded-lg p-6 border border-primary/10;
+        }
+        .input-field {
+            @apply w-full border-b-2 border-primary/20 bg-transparent py-2 px-1 focus:outline-none focus:border-sage transition-colors font-sans font-medium;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #ccc; 
+            border-radius: 4px;
+        }
+        input[type="checkbox"] {
+            accent-color: #8CA694;
+            cursor: pointer;
+            width: 1.1em;
+            height: 1.1em;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-pop-in {
+            animation: popIn 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="min-h-screen flex flex-col font-sans font-medium">
+    
+    <!-- Header -->
+    <header class="pt-8 pb-6 px-4 md:px-12 flex flex-col md:flex-row justify-between items-center border-b border-primary/10">
+        <div class="mb-4 md:mb-0 text-center md:text-left">
+            <h1 class="font-serif text-3xl md:text-4xl font-bold tracking-wider text-primary">小魏的野球數據</h1>
+            <p class="text-sm tracking-widest text-primary/70 mt-1 uppercase font-medium">Baseball Logs Analytics</p>
+        </div>
+        
+        <div class="flex gap-4">
+            <button @click="currentTab = 'batting'" :class="['px-6 py-2 rounded-full font-serif font-semibold transition-all', currentTab === 'batting' ? 'bg-sage text-white shadow-lg' : 'bg-white/50 hover:bg-white']">打擊數據</button>
+            <button @click="currentTab = 'pitching'" :class="['px-6 py-2 rounded-full font-serif font-semibold transition-all', currentTab === 'pitching' ? 'bg-slate text-white shadow-lg' : 'bg-white/50 hover:bg-white']">投球數據</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
+        
+        <!-- Dashboard Section: Changed to grid-cols-2 for mobile side-by-side -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div class="card col-span-1 flex flex-col justify-center items-center text-center p-4">
+                <h3 class="font-serif text-base md:text-lg text-primary/60 mb-2 font-bold">{{ currentTab === 'batting' ? '平均打擊率 (AVG)' : '防禦率 (ERA)' }}</h3>
+                <p class="text-3xl md:text-5xl font-serif font-semibold text-sage">{{ mainStat }}</p>
+                <div class="mt-2 text-xs md:text-sm text-primary/50">Cumulative Season Stats</div>
+            </div>
+             <div class="card col-span-1 flex flex-col justify-center items-center text-center p-4">
+                <h3 class="font-serif text-base md:text-lg text-primary/60 mb-2 font-bold">{{ currentTab === 'batting' ? '整體攻擊指數 (OPS)' : '每局被上壘率 (WHIP)' }}</h3>
+                <p class="text-3xl md:text-5xl font-serif font-semibold text-slate">{{ secondaryStat }}</p>
+                <div class="mt-2 text-xs md:text-sm text-primary/50">Performance Metric</div>
+            </div>
+
+            <!-- Enhanced Chart Card -->
+            <div class="card col-span-2 relative h-64 flex flex-col">
+                <div class="flex justify-between items-center mb-2 z-10">
+                    <h3 class="font-serif font-bold text-primary/70 text-sm">數據分析</h3>
+                    <select v-model="chartMode" class="bg-primary/5 text-primary border-none rounded px-3 py-1 text-xs font-sans font-bold focus:ring-1 focus:ring-sage cursor-pointer hover:bg-primary/10 transition">
+                        <option value="trend">📉 時間趨勢 (Trend)</option>
+                        <option value="opponent">🆚 依對手 (By Opponent)</option>
+                        <option value="game">🏆 依賽事 (By Game)</option>
+                    </select>
+                </div>
+                <div class="relative flex-grow w-full h-full min-h-0">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tools Section -->
+        <section class="flex flex-wrap justify-between items-end gap-4">
+            <div class="flex gap-4 items-center">
+                <button @click="showForm = true; isEditing = false; resetForm()" class="btn-primary flex items-center gap-2">
+                    <span>✎</span>
+                    <span class="inline sm:hidden">新增</span>
+                    <span class="hidden sm:inline">新增紀錄</span>
+                </button>
+                <div class="relative group">
+                    <label class="btn-secondary cursor-pointer flex items-center gap-2">
+                        <span>✉︎</span>
+                        <span class="inline sm:hidden">匯入</span>
+                        <span class="hidden sm:inline">匯入 (CSV/XLSX)</span>
+                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls" class="hidden">
+                    </label>
+                </div>
+                <button @click="showHelp = true" class="btn-tertiary flex items-center gap-2" title="查看檔案格式說明"> 
+                    <span>ℹ︎</span>
+                    <span class="inline sm:hidden">說明</span>
+                    <span class="hidden sm:inline">匯入說明</span>
+                </button>
+            </div>
+            
+            <div class="flex gap-2 items-center w-full md:w-auto">
+                <button v-if="selectedIds.size > 0" @click="deleteSelected" class="btn-danger flex items-center gap-2 animate-pulse whitespace-nowrap">
+                    <span>🗑️</span> <span class="hidden sm:inline">刪除選取</span> ({{ selectedIds.size }})
+                </button>
+                <div class="relative flex-grow md:flex-grow-0">
+                    <input v-model="searchQuery" type="text" placeholder="搜尋對手、球場或比賽..." class="bg-white px-4 py-2 rounded-full border border-primary/10 focus:outline-none focus:ring-1 focus:ring-sage w-full md:w-64 font-medium">
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Table -->
+        <section class="card overflow-hidden p-0">
+            <div class="overflow-x-auto custom-scroll">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-primary/5 text-primary text-sm font-serif font-semibold uppercase tracking-wider">
+                            <th class="p-4 w-12 text-center">
+                                <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" title="全選">
+                            </th>
+                            <th class="p-4 whitespace-nowrap">日期</th>
+                            <th class="p-4 whitespace-nowrap">比賽名稱</th>
+                            <th class="p-4 whitespace-nowrap">球場</th>
+                            <th class="p-4 whitespace-nowrap">對手</th>
+                            <th v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center cursor-pointer hover:bg-primary/10" @click="sortBy(col.key)">
+                                {{ col.label }}
+                            </th>
+                            <th class="p-4 whitespace-nowrap text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary/10 text-sm font-sans">
+                        <tr v-for="(log, index) in filteredLogs" :key="log.id" class="hover:bg-primary/5 transition-colors" :class="{'bg-primary/5': selectedIds.has(log.id)}">
+                            <td class="p-4 text-center">
+                                <input type="checkbox" :checked="selectedIds.has(log.id)" @change="toggleSelect(log.id)">
+                            </td>
+                            <td class="p-4 whitespace-nowrap font-semibold">{{ log.date }}</td>
+                            <td class="p-4 whitespace-nowrap">{{ log.gameName }}</td>
+                            <td class="p-4 whitespace-nowrap text-primary/70">{{ log.stadium || '-' }}</td>
+                            <td class="p-4 whitespace-nowrap">{{ log.opponent }}</td>
+                            <td v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center">
+                                {{ log[col.key] }}
+                            </td>
+                            <td class="p-4 whitespace-nowrap text-right space-x-2">
+                                <button @click="editLog(log)" class="text-slate hover:text-slate/70 font-medium">編輯</button>
+                                <button @click="deleteLog(log.id)" class="text-accent hover:text-accent/70 font-medium">刪除</button>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredLogs.length === 0">
+                            <td :colspan="displayColumns.length + 6" class="p-12 text-center text-primary/40 italic font-serif">
+                                尚未有數據，請新增紀錄或匯入資料。<br>
+                                <span class="text-xs text-sage mt-2 block">系統已連接雲端資料庫，資料將自動同步。</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot v-if="filteredLogs.length > 0" class="bg-primary/5 font-semibold text-primary">
+                        <tr>
+                            <td colspan="5" class="p-4 text-right font-serif">總計 / 平均</td>
+                            <td v-for="col in displayColumns" :key="col.key" class="p-4 text-center font-sans">
+                                {{ calculateTotal(col.key) }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Distribution Charts -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8" v-if="logs.length > 0">
+            <div class="card h-80">
+                <h4 class="font-serif font-bold text-lg mb-4 text-center">{{ currentTab === 'batting' ? '安打類型分佈' : '好壞球/三振保送佔比' }}</h4>
+                <div class="h-60 flex justify-center">
+                    <canvas id="distChart1"></canvas>
+                </div>
+            </div>
+            <div class="card h-80">
+                 <h4 class="font-serif font-bold text-lg mb-4 text-center">{{ currentTab === 'batting' ? '結果分佈 (上壘 vs 出局)' : '投球結果分佈' }}</h4>
+                <div class="h-60 flex justify-center">
+                    <canvas id="distChart2"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Form -->
+    <div v-if="showForm" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-pop-in">
+            <div class="p-6 border-b border-primary/10 flex justify-between items-center">
+                <h2 class="font-serif text-2xl font-semibold text-primary">{{ isEditing ? '編輯紀錄' : '新增紀錄' }} - {{ currentTab === 'batting' ? '打擊' : '投球' }}</h2>
+                <button @click="showForm = false" class="text-2xl text-primary/50 hover:text-primary">&times;</button>
+            </div>
+            
+            <form @submit.prevent="submitForm" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Common Fields -->
+                <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-primary/60 mb-1">日期 *</label>
+                        <input v-model="formData.date" type="date" required class="input-field">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-primary/60 mb-1">比賽名稱</label>
+                        <input v-model="formData.gameName" type="text" placeholder="例：例行賽 G1" class="input-field">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-primary/60 mb-1">比賽球場</label>
+                        <input v-model="formData.stadium" type="text" placeholder="例：臺北大巨蛋" class="input-field">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-primary/60 mb-1">對手</label>
+                        <input v-model="formData.opponent" type="text" placeholder="對手隊名" class="input-field">
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 border-t border-primary/10 my-2"></div>
+
+                <template v-if="currentTab === 'batting'">
+                    <div v-for="field in battingFields" :key="field.key">
+                        <label class="block text-xs font-bold text-primary/60 mb-1">{{ field.label }}</label>
+                        <input v-model.number="formData[field.key]" type="number" min="0" class="input-field bg-gray-50/50">
+                    </div>
+                </template>
+
+                <template v-else>
+                    <div v-for="field in pitchingFields" :key="field.key">
+                        <label class="block text-xs font-bold text-primary/60 mb-1">
+                            {{ field.label }} 
+                            <span v-if="field.key === 'IP'" class="text-[10px] text-accent font-normal">(輸入 5.1 代表 5局1/3)</span>
+                        </label>
+                        <input v-model.number="formData[field.key]" type="number" step="0.1" min="0" class="input-field bg-gray-50/50">
+                    </div>
+                </template>
+
+                <div class="md:col-span-2 mt-4 flex gap-4">
+                    <button type="submit" class="flex-1 btn-primary">{{ isEditing ? '更新' : '儲存' }}</button>
+                    <button type="button" @click="showForm = false" class="flex-1 py-2 rounded text-primary hover:bg-primary/10 transition font-medium">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div v-if="showHelp" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-pop-in">
+            <div class="p-6 border-b border-primary/10 flex justify-between items-center flex-shrink-0">
+                <h2 class="font-serif text-xl font-semibold text-primary">匯入檔案格式說明</h2>
+                <button @click="showHelp = false" class="text-2xl text-primary/50 hover:text-primary">&times;</button>
+            </div>
+            
+            <div class="p-6 text-sm text-primary/80 modal-body space-y-4">
+                <p>請確保您的 Excel (.xlsx) 或 CSV 檔案第一列包含以下<strong>欄位標題</strong>。系統會自動對應欄位名稱（支援中文或英文代碼）。</p>
+                
+                <div class="bg-primary/5 p-4 rounded">
+                    <h4 class="font-bold text-sage mb-2">通用欄位 (建議)</h4>
+                    <p class="leading-relaxed">
+                        • <strong>日期 (Date)</strong><br>
+                        • <strong>比賽名稱 (Game)</strong><br>
+                        • <strong>比賽球場 (Stadium)</strong><br>
+                        • <strong>對手 (Opponent)</strong>
+                    </p>
+                </div>
+
+                <div v-if="currentTab === 'batting'">
+                    <h4 class="font-bold text-sage mb-2 mt-4">打擊數據欄位</h4>
+                    <table class="w-full text-left border-collapse">
+                        <tr class="border-b border-primary/10"><th class="py-1">代碼</th><th class="py-1">中文說明</th></tr>
+                        <tr><td class="py-1">PA</td><td>打席</td></tr>
+                        <tr><td class="py-1">AB</td><td>打數</td></tr>
+                        <tr><td class="py-1">H</td><td>安打 (總數)</td></tr>
+                        <tr><td class="py-1">2B</td><td>二壘打</td></tr>
+                        <tr><td class="py-1">3B</td><td>三壘打</td></tr>
+                        <tr><td class="py-1">HR</td><td>全壘打</td></tr>
+                        <tr><td class="py-1">RBI</td><td>打點</td></tr>
+                        <tr><td class="py-1">BB</td><td>四壞保送</td></tr>
+                        <tr><td class="py-1">SO</td><td>三振</td></tr>
+                        <tr><td class="py-1">SB</td><td>盜壘</td></tr>
+                        <tr><td class="py-1">SF</td><td>高飛犧牲</td></tr>
+                    </table>
+                </div>
+
+                <div v-if="currentTab === 'pitching'">
+                    <h4 class="font-bold text-sage mb-2 mt-4">投球數據欄位</h4>
+                    <table class="w-full text-left border-collapse">
+                        <tr class="border-b border-primary/10"><th class="py-1">代碼</th><th class="py-1">中文說明</th></tr>
+                        <tr><td class="py-1">IP</td><td>局數 (例: 5.1)</td></tr>
+                        <tr><td class="py-1">W</td><td>勝投 (1或0)</td></tr>
+                        <tr><td class="py-1">L</td><td>敗投 (1或0)</td></tr>
+                        <tr><td class="py-1">H</td><td>被安打</td></tr>
+                        <tr><td class="py-1">R</td><td>失分</td></tr>
+                        <tr><td class="py-1">ER</td><td>責失分</td></tr>
+                        <tr><td class="py-1">BB</td><td>四壞保送</td></tr>
+                        <tr><td class="py-1">K</td><td>三振 (或 SO)</td></tr>
+                        <tr><td class="py-1">HR</td><td>被全壘打</td></tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-primary/10 text-center flex-shrink-0">
+                <button @click="showHelp = false" class="btn-primary w-full">我知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Dialog Modal -->
+    <div v-if="dialog.show" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-[60] p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-pop-in">
+            <div class="p-6 text-center">
+                <div class="text-4xl mb-4">{{ dialog.icon }}</div>
+                <h3 class="font-serif text-xl font-semibold text-primary mb-2">{{ dialog.title }}</h3>
+                <p class="text-primary/70 text-sm leading-relaxed">{{ dialog.message }}</p>
+            </div>
+            <div class="flex border-t border-primary/10">
+                <button v-if="dialog.isConfirm" @click="dialog.show = false" class="flex-1 py-3 text-primary/60 hover:bg-primary/5 transition font-medium">取消</button>
+                <div v-if="dialog.isConfirm" class="w-px bg-primary/10"></div>
+                <button @click="handleDialogConfirm" :class="['flex-1 py-3 text-white transition font-medium', dialog.isConfirm ? 'bg-accent hover:bg-accent/90' : 'bg-sage hover:bg-sage/90']">
+                    {{ dialog.confirmText || '確定' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+
+    createApp({
+        setup() {
+            // Firebase Init
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            
+            // Register DataLabels plugin globally
+            Chart.register(ChartDataLabels);
+
+            // State
+            const currentTab = ref('batting');
+            const showForm = ref(false);
+            const showHelp = ref(false);
+            const isEditing = ref(false);
+            const searchQuery = ref('');
+            const logs = ref([]);
+            const selectedIds = ref(new Set());
+            const chartMode = ref('trend');
+            const user = ref(null);
+            
+            // Dialog State
+            const dialog = ref({
+                show: false, title: '', message: '', icon: '', isConfirm: false, confirmText: '', onConfirm: null
+            });
+
+            // Chart Instances
+            let trendChartInstance = null;
+            let distChart1Instance = null;
+            let distChart2Instance = null;
+
+            // Data Structure Definition
+            const defaultFormData = {
+                date: new Date().toISOString().split('T')[0], gameName: '', stadium: '', opponent: '',
+                // Batting
+                PA: 0, AB: 0, H: 0, B2: 0, B3: 0, HR: 0, RBI: 0, BB: 0, SO: 0, SF: 0, SB: 0,
+                // Pitching
+                IP: 0, H_p: 0, R: 0, ER: 0, BB_p: 0, SO_p: 0, HR_p: 0, W: 0, L: 0, SV: 0
+            };
+            
+            const formData = ref({ ...defaultFormData });
+
+            const battingFields = [
+                { key: 'PA', label: '打席 (PA)' }, { key: 'AB', label: '打數 (AB)' },
+                { key: 'H', label: '安打 (H)' }, { key: 'B2', label: '二壘打 (2B)' },
+                { key: 'B3', label: '三壘打 (3B)' }, { key: 'HR', label: '全壘打 (HR)' },
+                { key: 'RBI', label: '打點 (RBI)' }, { key: 'BB', label: '四壞 (BB)' },
+                { key: 'SO', label: '三振 (SO)' }, { key: 'SB', label: '盜壘 (SB)' },
+                { key: 'SF', label: '高飛犧牲 (SF)' }
+            ];
+
+            const pitchingFields = [
+                { key: 'W', label: '勝 (W)' }, { key: 'L', label: '敗 (L)' },
+                { key: 'IP', label: '局數 (IP)' }, { key: 'H_p', label: '被安打 (H)' },
+                { key: 'R', label: '失分 (R)' }, { key: 'ER', label: '責失 (ER)' },
+                { key: 'BB_p', label: '四壞 (BB)' }, { key: 'SO_p', label: '三振 (K)' },
+                { key: 'HR_p', label: '被全壘打 (HR)' }
+            ];
+
+            // Computed Properties
+            const displayColumns = computed(() => {
+                if (currentTab.value === 'batting') {
+                    return [
+                        { key: 'AB', label: 'AB' }, { key: 'H', label: 'H' }, 
+                        { key: 'HR', label: 'HR' }, { key: 'RBI', label: 'RBI' }, 
+                        { key: 'AVG', label: 'AVG' }, { key: 'OPS', label: 'OPS' }
+                    ];
+                } else {
+                    return [
+                        { key: 'IP', label: 'IP' }, { key: 'H_p', label: 'H' }, 
+                        { key: 'ER', label: 'ER' }, { key: 'SO_p', label: 'K' },
+                        { key: 'BB_p', label: 'BB' }, { key: 'ERA', label: 'ERA' }, 
+                        { key: 'WHIP', label: 'WHIP' }
+                    ];
+                }
+            });
+
+            const filteredLogs = computed(() => {
+                let data = logs.value.filter(l => l.type === currentTab.value);
+                if (searchQuery.value) {
+                    const q = searchQuery.value.toLowerCase();
+                    data = data.filter(l => 
+                        l.opponent.toLowerCase().includes(q) || 
+                        l.gameName.toLowerCase().includes(q) ||
+                        (l.stadium && l.stadium.toLowerCase().includes(q))
+                    );
+                }
+                return data.map(log => {
+                    const stats = calculateStats(log);
+                    return { ...log, ...stats };
+                }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            });
+
+            const isAllSelected = computed(() => {
+                return filteredLogs.value.length > 0 && filteredLogs.value.every(log => selectedIds.value.has(log.id));
+            });
+
+            const mainStat = computed(() => {
+                const data = filteredLogs.value;
+                if (data.length === 0) return '---';
+                
+                if (currentTab.value === 'batting') {
+                    const totalH = data.reduce((sum, i) => sum + (i.H || 0), 0);
+                    const totalAB = data.reduce((sum, i) => sum + (i.AB || 0), 0);
+                    return totalAB === 0 ? '.000' : (totalH / totalAB).toFixed(3).replace(/^0+/, '');
+                } else {
+                    const totalER = data.reduce((sum, i) => sum + (i.ER || 0), 0);
+                    const totalIP_outs = data.reduce((sum, i) => sum + convertIPtoOuts(i.IP), 0);
+                    const totalIP = totalIP_outs / 3;
+                    return totalIP === 0 ? '0.00' : (totalER * 9 / totalIP).toFixed(2);
+                }
+            });
+
+            const secondaryStat = computed(() => {
+                const data = filteredLogs.value;
+                if (data.length === 0) return '---';
+
+                if (currentTab.value === 'batting') {
+                    const totalAB = data.reduce((sum, i) => sum + (i.AB || 0), 0);
+                    const totalH = data.reduce((sum, i) => sum + (i.H || 0), 0);
+                    const totalBB = data.reduce((sum, i) => sum + (i.BB || 0), 0);
+                    const totalPA = data.reduce((sum, i) => sum + (i.PA || 0), 0);
+                    const totalTB = data.reduce((sum, i) => sum + (i.H + i.B2 + 2*i.B3 + 3*i.HR), 0);
+                    
+                    const OBP = totalPA === 0 ? 0 : (totalH + totalBB) / totalPA;
+                    const SLG = totalAB === 0 ? 0 : totalTB / totalAB;
+                    return (OBP + SLG).toFixed(3).replace(/^0+/, '');
+                } else {
+                    const totalIP_outs = data.reduce((sum, i) => sum + convertIPtoOuts(i.IP), 0);
+                    const totalIP = totalIP_outs / 3;
+                    const totalWalksHits = data.reduce((sum, i) => sum + (i.BB_p || 0) + (i.H_p || 0), 0);
+                    return totalIP === 0 ? '0.00' : (totalWalksHits / totalIP).toFixed(2);
+                }
+            });
+
+            // Firebase Logic
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            };
+
+            onMounted(() => {
+                initAuth();
+                onAuthStateChanged(auth, (u) => {
+                    user.value = u;
+                    if (u) {
+                        // Using Public Data for Cross-Device sharing in this environment
+                        const q = collection(db, 'artifacts', appId, 'public', 'data', 'baseball_logs');
+                        onSnapshot(q, (snapshot) => {
+                            logs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        });
+                    }
+                });
+                renderCharts();
+            });
+
+            // CRUD Operations (Firestore)
+            async function submitForm() {
+                if (!user.value) return;
+                const payload = { ...formData.value, type: currentTab.value };
+                
+                try {
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'baseball_logs');
+                    if (isEditing.value && payload.id) {
+                        // Update
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', payload.id);
+                        const { id, ...data } = payload; // Remove ID from data
+                        await updateDoc(docRef, data);
+                    } else {
+                        // Create
+                        delete payload.id; // Ensure no ID in payload
+                        await addDoc(colRef, payload);
+                    }
+                    showForm.value = false;
+                    resetForm();
+                } catch (e) {
+                    console.error(e);
+                    showAlert('錯誤', '儲存失敗，請稍後再試。', true);
+                }
+            }
+
+            async function deleteLog(id) {
+                if (!user.value) return;
+                showConfirm('刪除確認', '確定要刪除這筆紀錄嗎？', async () => {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', id));
+                        if(selectedIds.value.has(id)) selectedIds.value.delete(id);
+                    } catch (e) {
+                        showAlert('錯誤', '刪除失敗', true);
+                    }
+                });
+            }
+
+            async function deleteSelected() {
+                if (!user.value) return;
+                showConfirm('刪除確認', `確定要刪除這 ${selectedIds.value.size} 筆紀錄嗎？\n此操作無法復原。`, async () => {
+                    try {
+                        const batch = writeBatch(db);
+                        selectedIds.value.forEach(id => {
+                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', id);
+                            batch.delete(docRef);
+                        });
+                        await batch.commit();
+                        selectedIds.value.clear();
+                    } catch (e) {
+                        showAlert('錯誤', '批次刪除失敗', true);
+                    }
+                });
+            }
+
+            // Helper Functions
+            function showConfirm(title, message, onConfirm) {
+                dialog.value = { show: true, title, message, icon: '🗑️', isConfirm: true, confirmText: '確認刪除', onConfirm };
+            }
+
+            function showAlert(title, message, isError = false) {
+                dialog.value = { show: true, title, message, icon: isError ? '❌' : '✅', isConfirm: false, confirmText: '好', onConfirm: null };
+            }
+
+            function handleDialogConfirm() {
+                if (dialog.value.isConfirm && dialog.value.onConfirm) {
+                    dialog.value.onConfirm();
+                }
+                dialog.value.show = false;
+            }
+
+            function convertIPtoOuts(ip) {
+                const str = String(ip);
+                const parts = str.split('.');
+                let innings = parseInt(parts[0]);
+                let partial = parts[1] ? parseInt(parts[1]) : 0;
+                return (innings * 3) + partial;
+            }
+
+            function convertOutsToIP(outs) {
+                const innings = Math.floor(outs / 3);
+                const remainder = outs % 3;
+                return remainder === 0 ? innings : parseFloat(`${innings}.${remainder}`);
+            }
+
+            function calculateStats(log) {
+                if (log.type === 'batting') {
+                    const avg = log.AB === 0 ? 0 : log.H / log.AB;
+                    const single = log.H - (log.B2 || 0) - (log.B3 || 0) - (log.HR || 0);
+                    const tb = single + (2 * (log.B2 || 0)) + (3 * (log.B3 || 0)) + (4 * (log.HR || 0));
+                    const slg = log.AB === 0 ? 0 : tb / log.AB;
+                    const obp = log.PA === 0 ? 0 : (log.H + log.BB) / log.PA;
+                    
+                    return {
+                        AVG: avg.toFixed(3).replace(/^0+/, ''),
+                        OPS: (obp + slg).toFixed(3).replace(/^0+/, '')
+                    };
+                } else {
+                    const outs = convertIPtoOuts(log.IP);
+                    const ip_real = outs / 3;
+                    const era = ip_real === 0 ? 0 : (log.ER * 9) / ip_real;
+                    const whip = ip_real === 0 ? 0 : (log.BB_p + log.H_p) / ip_real;
+                    return {
+                        ERA: era.toFixed(2),
+                        WHIP: whip.toFixed(2)
+                    }
+                }
+            }
+
+            function calculateTotal(key) {
+                if (key === 'AVG' || key === 'OPS' || key === 'ERA' || key === 'WHIP') return '---';
+                let total = filteredLogs.value.reduce((sum, item) => sum + (Number(item[key]) || 0), 0);
+                if (key === 'IP') {
+                    const totalOuts = filteredLogs.value.reduce((sum, item) => sum + convertIPtoOuts(item.IP), 0);
+                    return convertOutsToIP(totalOuts);
+                }
+                return total;
+            }
+
+            function calculateGroupStat(groupLogs) {
+                if (currentTab.value === 'batting') {
+                     const h = groupLogs.reduce((s, l) => s + (l.H || 0), 0);
+                     const ab = groupLogs.reduce((s, l) => s + (l.AB || 0), 0);
+                     return ab === 0 ? 0 : (h/ab);
+                } else {
+                     const er = groupLogs.reduce((s, l) => s + (l.ER || 0), 0);
+                     const outs = groupLogs.reduce((s, l) => s + convertIPtoOuts(l.IP), 0);
+                     const ip = outs / 3;
+                     return ip === 0 ? 0 : (er * 9 / ip);
+                }
+            }
+
+            function editLog(log) {
+                formData.value = { ...log };
+                currentTab.value = log.type;
+                isEditing.value = true;
+                showForm.value = true;
+            }
+
+            function resetForm() {
+                const today = new Date().toISOString().split('T')[0];
+                formData.value = { ...defaultFormData, date: today };
+            }
+
+            // Selection Logic
+            function toggleSelectAll(event) {
+                if (event.target.checked) {
+                    filteredLogs.value.forEach(log => selectedIds.value.add(log.id));
+                } else {
+                    filteredLogs.value.forEach(log => selectedIds.value.delete(log.id));
+                }
+            }
+
+            function toggleSelect(id) {
+                if (selectedIds.value.has(id)) selectedIds.value.delete(id);
+                else selectedIds.value.add(id);
+            }
+
+            // Excel/CSV Import
+            function handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: 0 });
+
+                    if (jsonData.length === 0) {
+                        showAlert('匯入失敗', '檔案內無資料', true);
+                        event.target.value = '';
+                        return;
+                    }
+
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'baseball_logs');
+                    const batchSize = 500; 
+                    let batch = writeBatch(db);
+                    let count = 0;
+                    let totalImported = 0;
+
+                    const newLogs = jsonData.map(row => {
+                        const getVal = (keys) => {
+                            for (let key of keys) {
+                                if (row[key] !== undefined) return row[key];
+                            }
+                            return 0; // default
+                        };
+
+                        const date = getVal(['日期', 'Date', 'date']) || new Date().toISOString().split('T')[0];
+                        const gameName = getVal(['比賽名稱', '比賽', 'Game', 'game']) || '匯入賽事';
+                        const stadium = getVal(['球場', 'Stadium', 'stadium', '比賽球場', 'Place', '地點']) || '';
+                        const opponent = getVal(['對手', 'Opponent', 'opponent']) || 'Unknown';
+
+                        const log = {
+                            type: currentTab.value,
+                            date: typeof date === 'number' ? new Date(Math.round((date - 25569)*86400*1000)).toISOString().split('T')[0] : date, 
+                            gameName,
+                            stadium,
+                            opponent
+                        };
+
+                        if (currentTab.value === 'batting') {
+                            log.PA = Number(getVal(['PA', '打席']));
+                            log.AB = Number(getVal(['AB', '打數']));
+                            log.H = Number(getVal(['H', '安打']));
+                            log.B2 = Number(getVal(['2B', '二壘打', '二安']));
+                            log.B3 = Number(getVal(['3B', '三壘打', '三安']));
+                            log.HR = Number(getVal(['HR', '全壘打']));
+                            log.RBI = Number(getVal(['RBI', '打點']));
+                            log.BB = Number(getVal(['BB', '四壞', '四壞保送']));
+                            log.SO = Number(getVal(['SO', 'K', '三振']));
+                            log.SB = Number(getVal(['SB', '盜壘']));
+                            log.SF = Number(getVal(['SF', '高飛犧牲']));
+                        } else {
+                            log.IP = Number(getVal(['IP', '局數']));
+                            log.W = Number(getVal(['W', '勝', '勝投']));
+                            log.L = Number(getVal(['L', '敗', '敗投']));
+                            log.SV = Number(getVal(['SV', 'S', '救援']));
+                            log.H_p = Number(getVal(['H', '被安打', '安打']));
+                            log.R = Number(getVal(['R', '失分']));
+                            log.ER = Number(getVal(['ER', '責失', '責失分']));
+                            log.BB_p = Number(getVal(['BB', '四壞', '四壞保送']));
+                            log.SO_p = Number(getVal(['SO', 'K', '三振']));
+                            log.HR_p = Number(getVal(['HR', '被全壘打', '全壘打']));
+                        }
+                        return log;
+                    });
+
+                    // Firestore Batch Write
+                    try {
+                        for (const log of newLogs) {
+                            const docRef = doc(colRef); 
+                            batch.set(docRef, log);
+                            count++;
+                            if (count >= batchSize) {
+                                await batch.commit();
+                                totalImported += count;
+                                batch = writeBatch(db);
+                                count = 0;
+                            }
+                        }
+                        if (count > 0) {
+                            await batch.commit();
+                            totalImported += count;
+                        }
+                        showAlert('匯入成功', `成功匯入 ${totalImported} 筆資料`);
+                    } catch (e) {
+                        console.error(e);
+                        showAlert('匯入失敗', '資料庫寫入錯誤', true);
+                    }
+                    event.target.value = '';
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            function sortBy(key) {
+                logs.value.sort((a, b) => (b[key] || 0) - (a[key] || 0));
+            }
+
+            // Visualization
+            function renderCharts() {
+                nextTick(() => {
+                    const ctxTrend = document.getElementById('trendChart');
+                    const ctxDist1 = document.getElementById('distChart1');
+                    const ctxDist2 = document.getElementById('distChart2');
+                    
+                    if (trendChartInstance) trendChartInstance.destroy();
+                    if (distChart1Instance) distChart1Instance.destroy();
+                    if (distChart2Instance) distChart2Instance.destroy();
+
+                    if (!ctxTrend) return; // Only trend chart is guaranteed to be there initially
+
+                    const primaryColor = '#8CA694';
+                    const secondaryColor = '#88A6B0';
+
+                    let labels, mainData, chartType;
+
+                    if (chartMode.value === 'trend') {
+                         const data = filteredLogs.value.slice().reverse();
+                         labels = data.map(l => l.date.slice(5));
+                         mainData = currentTab.value === 'batting' 
+                            ? data.map(l => calculateStats(l).AVG)
+                            : data.map(l => calculateStats(l).ERA);
+                         chartType = 'line';
+                    } else {
+                        const key = chartMode.value === 'game' ? 'gameName' : 'opponent';
+                        const groups = {};
+                        filteredLogs.value.forEach(l => {
+                            const gKey = l[key] || 'Unknown';
+                            if(!groups[gKey]) groups[gKey] = [];
+                            groups[gKey].push(l);
+                        });
+                        labels = Object.keys(groups);
+                        mainData = labels.map(lbl => calculateGroupStat(groups[lbl]));
+                        chartType = 'bar';
+                    }
+
+                    const labelText = currentTab.value === 'batting' ? 'AVG (打擊率)' : 'ERA (防禦率)';
+
+                    trendChartInstance = new Chart(ctxTrend, {
+                        type: chartType,
+                        data: {
+                            labels: labels,
+                            datasets: [{ 
+                                label: labelText,
+                                data: mainData, 
+                                tension: 0.3, 
+                                fill: chartType === 'line', 
+                                backgroundColor: chartType === 'line' ? (currentTab.value === 'batting' ? '#8CA69433' : '#88A6B033') : primaryColor,
+                                borderColor: chartType === 'line' ? (currentTab.value === 'batting' ? primaryColor : secondaryColor) : 'transparent',
+                                pointBackgroundColor: '#fff', 
+                                pointBorderWidth: 2,
+                                barPercentage: 0.5
+                            }]
+                        },
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { 
+                                legend: { display: false }, 
+                                title: { display: false },
+                                datalabels: { display: false } 
+                            }, 
+                            scales: { y: { beginAtZero: chartType === 'bar' } } 
+                        }
+                    });
+
+                    // Only render distribution charts if elements exist (i.e. we have data)
+                    if (ctxDist1 && ctxDist2) {
+                        const data = filteredLogs.value;
+                        let distData1, distLabels1;
+                        if (currentTab.value === 'batting') {
+                            const totalH = data.reduce((s, i) => s + i.H, 0);
+                            const totalBB = data.reduce((s, i) => s + i.BB, 0);
+                            const totalSO = data.reduce((s, i) => s + i.SO, 0);
+                            distLabels1 = ['安打', '保送', '三振', '其他'];
+                            distData1 = [totalH, totalBB, totalSO, Math.max(0, data.reduce((s, i) => s+i.PA,0) - totalH - totalBB - totalSO)];
+                        } else {
+                            const totalK = data.reduce((s, i) => s + i.SO_p, 0);
+                            const totalBB = data.reduce((s, i) => s + i.BB_p, 0);
+                            const totalOuts = data.reduce((s, i) => s + convertIPtoOuts(i.IP), 0);
+                            const otherOuts = Math.max(0, totalOuts - totalK);
+                            distLabels1 = ['三振 (K)', '保送 (BB)', '擊球出局'];
+                            distData1 = [totalK, totalBB, otherOuts];
+                        }
+
+                        distChart1Instance = new Chart(ctxDist1, {
+                            type: 'doughnut',
+                            data: { labels: distLabels1, datasets: [{ data: distData1, backgroundColor: ['#8CA694', '#88A6B0', '#D97C6E', '#F2E8D5'] }] },
+                            options: { 
+                                responsive: true, 
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    datalabels: {
+                                        display: true, color: '#fff', font: { weight: 'bold', size: 12 },
+                                        formatter: (value, ctx) => {
+                                            let sum = 0;
+                                            ctx.chart.data.datasets[0].data.map(data => { sum += data; });
+                                            if (sum === 0) return '0%';
+                                            let percentage = (value * 100 / sum).toFixed(1) + "%";
+                                            return percentage === '0.0%' ? '' : percentage;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        let distData2, distLabels2;
+                        if (currentTab.value === 'batting') {
+                             const h1 = data.reduce((s, i) => s + (i.H - (i.B2||0) - (i.B3||0) - (i.HR||0)), 0);
+                             const h2 = data.reduce((s, i) => s + (i.B2||0), 0);
+                             const h3 = data.reduce((s, i) => s + (i.B3||0), 0);
+                             const hr = data.reduce((s, i) => s + (i.HR||0), 0);
+                             distLabels2 = ['一安', '二安', '三安', '全壘打'];
+                             distData2 = [h1, h2, h3, hr];
+                        } else {
+                            const w = data.reduce((s, i) => s + (i.W || 0), 0);
+                            const l = data.reduce((s, i) => s + (i.L || 0), 0);
+                            const sv = data.reduce((s, i) => s + (i.SV || 0), 0);
+                            distLabels2 = ['勝投', '敗投', '救援'];
+                            distData2 = [w, l, sv];
+                        }
+
+                        distChart2Instance = new Chart(ctxDist2, {
+                            type: 'bar',
+                            data: { labels: distLabels2, datasets: [{ label: '數量', data: distData2, backgroundColor: '#736357' }] },
+                            options: { 
+                                responsive: true, maintainAspectRatio: false, 
+                                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                                plugins: { datalabels: { display: false } }
+                            }
+                        });
+                    }
+                });
+            }
+
+            watch([currentTab, chartMode], () => { 
+                if(chartMode.value === 'trend') searchQuery.value = '';
+                selectedIds.value.clear(); 
+                renderCharts(); 
+            });
+            watch(logs, () => { renderCharts(); }, { deep: true });
+
+            return {
+                currentTab, showForm, showHelp, isEditing, formData, searchQuery,
+                battingFields, pitchingFields, displayColumns, filteredLogs, mainStat, secondaryStat,
+                submitForm, editLog, deleteLog, resetForm, handleFileUpload, calculateTotal, sortBy, logs,
+                selectedIds, isAllSelected, toggleSelectAll, toggleSelect, deleteSelected,
+                dialog, handleDialogConfirm, chartMode 
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
