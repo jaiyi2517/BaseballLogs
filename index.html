@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,15 +17,24 @@
             theme: {
                 extend: {
                     colors: {
-                        paper: '#F9F4EB',
-                        primary: '#736357',
-                        sage: '#8CA694',
-                        slate: '#88A6B0',
-                        accent: '#D97C6E'
+                        retroPaper: '#F9F4EB',  /* 更新：更明亮的復古米白 */
+                        retroText: '#736357',   /* 深褐灰 (文字) */
+                        retroGreen: '#8CA694',  /* 鼠尾草綠 (主色) */
+                        retroBlue: '#88A6B0',   /* 灰藍 (次色) */
+                        retroWhite: '#FFFFFF',  /* 純白 (卡片) */
+                        retroAccent: '#D97C6E'  /* 強調色 (紅) */
                     },
                     fontFamily: {
                         serif: ['"Noto Serif TC"', 'serif'],
                         sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'paper': '3px 3px 8px rgba(115, 99, 87, 0.15)',
+                        'leather': '0 2px 0 rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2)'
+                    },
+                    backgroundImage: {
+                        // 網格紋理疊加 (透明度調整為 0.05，非常清淡)
+                        'grid-pattern': 'linear-gradient(rgba(115, 99, 87, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(115, 99, 87, 0.05) 1px, transparent 1px)'
                     }
                 }
             }
@@ -43,49 +52,99 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <style type="text/tailwindcss">
+        /* 頁面背景：更新後的底色 + 網格 */
         body {
             background-color: #F9F4EB;
+            background-image: theme('backgroundImage.grid-pattern');
+            background-size: 20px 20px;
             color: #736357;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23736357' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         }
+
+        /* (已移除左側裝訂線裝飾) */
+
+        /* ----- 按鈕設計 ----- */
+
+        /* 皮革標籤風格 (實心) */
+        .btn-leather {
+            @apply text-white px-5 py-2 rounded-sm shadow-leather transition-all duration-200 font-serif font-bold tracking-wide flex items-center justify-center relative active:translate-y-[1px] active:shadow-none;
+        }
+        /* 縫線效果 */
+        .btn-leather::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px; right: 3px; bottom: 3px;
+            border: 1px dashed rgba(255,255,255,0.5);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
         .btn-primary {
-            @apply bg-sage text-white px-4 py-2 rounded shadow hover:bg-opacity-90 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+            @apply btn-leather bg-retroGreen hover:bg-[#7A9482];
         }
+        
         .btn-secondary {
-            @apply bg-slate text-white px-4 py-2 rounded shadow hover:bg-opacity-70 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+            @apply btn-leather bg-retroBlue hover:bg-[#76949E];
         }
-        .btn-tertiary {
-            @apply bg-white/40 text-primary/70 border border-primary/10 px-4 py-2 rounded hover:bg-white hover:text-primary hover:shadow-sm hover:border-primary/20 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center backdrop-blur-[2px];
-        }
+
         .btn-danger {
-            @apply bg-accent text-white px-4 py-2 rounded shadow hover:bg-opacity-90 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
+            @apply btn-leather bg-retroAccent hover:bg-[#C06A5C];
         }
+
+        /* 手繪框線風格 (透明) */
+        .btn-sketch {
+            @apply bg-retroWhite/50 text-retroText border-2 border-retroText/40 px-4 py-2 rounded-sm hover:bg-retroWhite hover:border-retroText transition-all duration-300 font-sans font-bold flex items-center justify-center backdrop-blur-sm;
+            /* 讓邊框看起來有點手繪的不規則感 */
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+        }
+
+        /* ----- 卡片設計 ----- */
+
+        /* 便條紙/剪貼簿風格 */
         .card {
-            @apply bg-white shadow-md rounded-lg p-6 border border-primary/10;
+            @apply bg-retroWhite shadow-paper p-6 relative transition-transform duration-300;
+            border: 1px solid rgba(115, 99, 87, 0.1);
+            /* 微妙的圓角 */
+            border-radius: 2px; 
         }
+        
+        /* 頂部膠帶裝飾 */
+        .card-tape::before {
+            content: "";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1deg);
+            width: 100px;
+            height: 24px;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(0,0,0,0.05);
+            border-right: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            z-index: 1;
+        }
+
+        /* 輸入框：手寫線條 */
         .input-field {
-            @apply w-full border-b-2 border-primary/20 bg-transparent py-2 px-1 focus:outline-none focus:border-sage transition-colors font-sans font-medium;
+            @apply w-full border-b-2 border-retroText/20 bg-transparent py-2 px-1 focus:outline-none focus:border-retroGreen text-retroText font-serif font-bold transition-colors placeholder-retroText/40;
         }
-        .custom-scroll::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #ccc; 
-            border-radius: 4px;
-        }
+
+        /* 滾動條 (復古棕) */
+        .custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(115, 99, 87, 0.05); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #BCAAA4; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #8D6E63; }
+
         .modal-body {
             @apply flex-1 overflow-y-auto custom-scroll min-h-0;
         }
+
         input[type="checkbox"] {
             accent-color: #8CA694;
             cursor: pointer;
             width: 1.1em;
             height: 1.1em;
         }
+
         @keyframes popIn {
             0% { opacity: 0; transform: scale(0.95); }
             100% { opacity: 1; transform: scale(1); }
@@ -101,61 +160,77 @@
 <div id="app" class="min-h-screen flex flex-col font-sans font-medium" v-cloak>
     
     <!-- Header -->
-    <header class="pt-8 pb-6 px-4 md:px-12 flex flex-col md:flex-row justify-between items-center border-b border-primary/10">
-        <div class="mb-4 md:mb-0 text-center md:text-left">
-            <h1 class="font-serif text-3xl md:text-4xl font-bold tracking-wider text-primary">小魏的野球數據</h1>
-            <p class="text-sm tracking-widest text-primary/70 mt-1 uppercase font-medium">Baseball Logs Analytics</p>
+    <header class="pt-10 pb-8 px-6 md:px-16 flex flex-col md:flex-row justify-between items-center relative">
+        <div class="mb-6 md:mb-0 text-center md:text-left">
+            <h1 class="font-serif text-4xl md:text-5xl font-black tracking-wider text-retroText relative z-10">小魏的野球數據</h1>
+            <div class="relative inline-block mt-2">
+                <!-- 標題裝飾底線：現在位於副標題容器內，寬度會跟隨文字 -->
+                <div class="absolute bottom-1 left-0 right-0 h-3 bg-retroGreen/20 -skew-x-12 transform"></div>
+                <p class="text-sm tracking-[0.2em] text-retroText/60 uppercase font-bold font-sans relative z-10">Baseball Logs Analytics</p>
+            </div>
         </div>
         
         <div class="flex gap-4">
-            <button @click="currentTab = 'batting'" :class="['px-6 py-2 rounded-full font-serif font-semibold transition-all', currentTab === 'batting' ? 'bg-sage text-white shadow-lg' : 'bg-white/50 hover:bg-white']">打擊數據</button>
-            <button @click="currentTab = 'pitching'" :class="['px-6 py-2 rounded-full font-serif font-semibold transition-all', currentTab === 'pitching' ? 'bg-slate text-white shadow-lg' : 'bg-white/50 hover:bg-white']">投球數據</button>
+            <button @click="currentTab = 'batting'" :class="['px-6 py-2 rounded-sm font-serif font-bold transition-all border-2 relative overflow-hidden', currentTab === 'batting' ? 'bg-retroGreen text-white border-retroGreen shadow-md' : 'text-retroText border-retroText/20 bg-retroWhite/50 hover:bg-retroWhite']">
+                <span class="relative z-10">打擊數據</span>
+            </button>
+            <button @click="currentTab = 'pitching'" :class="['px-6 py-2 rounded-sm font-serif font-bold transition-all border-2 relative overflow-hidden', currentTab === 'pitching' ? 'bg-retroBlue text-white border-retroBlue shadow-md' : 'text-retroText border-retroText/20 bg-retroWhite/50 hover:bg-retroWhite']">
+                <span class="relative z-10">投球數據</span>
+            </button>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
+    <main class="flex-grow p-4 md:px-12 max-w-7xl mx-auto w-full space-y-10">
         
         <!-- Dashboard Section -->
-        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            <div class="card col-span-1 flex flex-col justify-center items-center text-center p-4">
-                <h3 class="font-serif text-base md:text-lg text-primary/60 mb-2 font-bold">{{ currentTab === 'batting' ? '平均打擊率 (AVG)' : '防禦率 (ERA)' }}</h3>
-                <p class="text-3xl md:text-5xl font-serif font-semibold text-sage">{{ mainStat }}</p>
-                <div class="mt-2 text-xs md:text-sm text-primary/50">Cumulative Season Stats</div>
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Card: Season Stats -->
+            <div class="card card-tape col-span-1 flex flex-col justify-center items-center text-center rotate-[-1deg]">
+                <h3 class="font-serif text-lg text-retroText/60 mb-2 font-bold">{{ currentTab === 'batting' ? '平均打擊率 (AVG)' : '防禦率 (ERA)' }}</h3>
+                <p class="text-4xl md:text-5xl font-serif font-black text-retroGreen drop-shadow-sm">{{ mainStat }}</p>
+                <div class="mt-2 text-xs md:text-sm text-retroText/40 font-bold border-t-2 border-retroText/10 pt-1 w-full max-w-[80%]">SEASON STATS</div>
             </div>
-             <div class="card col-span-1 flex flex-col justify-center items-center text-center p-4">
-                <h3 class="font-serif text-base md:text-lg text-primary/60 mb-2 font-bold">{{ currentTab === 'batting' ? '整體攻擊指數 (OPS)' : '每局被上壘率 (WHIP)' }}</h3>
-                <p class="text-3xl md:text-5xl font-serif font-semibold text-slate">{{ secondaryStat }}</p>
-                <div class="mt-2 text-xs md:text-sm text-primary/50">Performance Metric</div>
+            <!-- Card: Advanced Stats -->
+             <div class="card card-tape col-span-1 flex flex-col justify-center items-center text-center rotate-[1deg]">
+                <h3 class="font-serif text-lg text-retroText/60 mb-2 font-bold">{{ currentTab === 'batting' ? '整體攻擊指數 (OPS)' : '每局被上壘率 (WHIP)' }}</h3>
+                <p class="text-4xl md:text-5xl font-serif font-black text-retroBlue drop-shadow-sm">{{ secondaryStat }}</p>
+                <div class="mt-2 text-xs md:text-sm text-retroText/40 font-bold border-t-2 border-retroText/10 pt-1 w-full max-w-[80%]">ADVANCED</div>
             </div>
 
             <!-- Enhanced Chart Card -->
-            <div class="card col-span-2 relative h-64 flex flex-col">
-                <div class="flex justify-between items-center mb-2 z-10">
-                    <h3 class="font-serif font-bold text-primary/70 text-sm">數據分析</h3>
-                    <select v-model="chartMode" class="bg-primary/5 text-primary border-none rounded px-3 py-1 text-xs font-sans font-bold focus:ring-1 focus:ring-sage cursor-pointer hover:bg-primary/10 transition">
-                        <option value="trend">📉 時間趨勢 (Trend)</option>
-                        <option value="opponent">🆚 依對手 (By Opponent)</option>
-                        <option value="game">🏆 依賽事 (By Game)</option>
+            <div class="card col-span-2 relative h-72 flex flex-col border-2 border-retroText/10 bg-retroWhite/80">
+                <!-- 像圖釘一樣固定住 -->
+                <div class="absolute -top-3 -left-3 text-2xl text-retroText/30 transform -rotate-45">📌</div>
+            
+
+                <div class="flex justify-between items-center mb-4 z-10 px-2">
+                    <h3 class="font-serif font-black text-retroText text-lg flex items-center gap-2">
+                        <span class="w-2 h-6 bg-retroGreen rounded-sm"></span> 數據分析
+                    </h3>
+                    <select v-model="chartMode" class="bg-retroPaper text-retroText border-2 border-retroText/20 rounded-sm px-3 py-1 text-xs font-bold focus:border-retroGreen cursor-pointer hover:bg-white transition">
+                        <option value="trend">📉 時間趨勢</option>
+                        <option value="opponent">🆚 依對手</option>
+                        <option value="game">🏆 依賽事</option>
                     </select>
                 </div>
-                <div class="relative flex-grow w-full h-full min-h-0">
+                <div class="relative flex-grow w-full h-full min-h-0 bg-white border border-retroText/5 rounded-sm p-2">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
         </section>
 
         <!-- Tools Section -->
-        <section class="flex flex-wrap justify-between items-end gap-4">
+        <section class="flex flex-wrap justify-between items-end gap-6 border-b-2 border-retroText/10 pb-6 border-dashed">
             <div class="flex gap-4 items-center">
                 <button @click="showForm = true; isEditing = false; resetForm()" class="btn-primary flex items-center gap-2">
-                    <span>✎</span>
+                    <span class="text-lg">✎</span>
                     <span class="inline sm:hidden">新增</span>
                     <span class="hidden sm:inline">新增紀錄</span>
                 </button>
                 <div class="relative group">
                     <label class="btn-secondary cursor-pointer flex items-center gap-2">
-                        <span>✉︎</span>
+                        <span class="text-lg">📥</span>
                         <span class="inline sm:hidden">匯入</span>
                         <span class="hidden sm:inline">匯入 (CSV/XLSX)</span>
                         <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls, .json" class="hidden">
@@ -163,64 +238,65 @@
                 </div>
             </div>
             
-            <div class="flex gap-2 items-center w-full md:w-auto">
+            <div class="flex gap-3 items-center w-full md:w-auto">
                 <button v-if="selectedIds.size > 0" @click="deleteSelected" class="btn-danger flex items-center gap-2 animate-pulse whitespace-nowrap">
                     <span>🗑️</span> <span class="hidden sm:inline">刪除選取</span> ({{ selectedIds.size }})
                 </button>
                 <div class="relative flex-grow md:flex-grow-0">
-                    <input v-model="searchQuery" type="text" placeholder="搜尋對手、球場或比賽..." class="bg-white px-4 py-2 rounded-full border border-primary/10 focus:outline-none focus:ring-1 focus:ring-sage w-full md:w-64 font-medium">
+                    <input v-model="searchQuery" type="text" placeholder="🔍 搜尋紀錄..." class="bg-retroWhite border-2 border-retroText/20 px-4 py-2 rounded-sm focus:outline-none focus:border-retroGreen w-full md:w-64 font-bold text-retroText placeholder-retroText/40 shadow-inner">
                 </div>
             </div>
         </section>
 
         <!-- Data Table -->
-        <section class="card overflow-hidden p-0">
+        <section class="card p-0 rounded-sm border-2 border-retroText/10 overflow-hidden bg-retroWhite">
             <div class="overflow-x-auto custom-scroll">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-primary/5 text-primary text-sm font-serif font-semibold uppercase tracking-wider">
-                            <th class="p-4 w-12 text-center">
+                        <tr class="bg-retroText/5 text-retroText text-sm font-serif font-black uppercase tracking-wider border-b-2 border-retroText/10 border-dashed">
+                            <th class="p-4 w-12 text-center bg-retroPaper/50">
                                 <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" title="全選">
                             </th>
-                            <th class="p-4 whitespace-nowrap">日期</th>
-                            <th class="p-4 whitespace-nowrap">比賽名稱</th>
-                            <th class="p-4 whitespace-nowrap">球場</th>
-                            <th class="p-4 whitespace-nowrap">對手</th>
-                            <th v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center cursor-pointer hover:bg-primary/10" @click="sortBy(col.key)">
+                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">日期</th>
+                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">比賽名稱</th>
+                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">球場</th>
+                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">對手</th>
+                            <th v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center cursor-pointer hover:bg-retroText/10 bg-retroPaper/50" @click="sortBy(col.key)">
                                 {{ col.label }}
                             </th>
-                            <th class="p-4 whitespace-nowrap text-right">操作</th>
+                            <th class="p-4 whitespace-nowrap text-right bg-retroPaper/50">操作</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-primary/10 text-sm font-sans">
-                        <tr v-for="(log, index) in filteredLogs" :key="log.id" class="hover:bg-primary/5 transition-colors" :class="{'bg-primary/5': selectedIds.has(log.id)}">
+                    <tbody class="divide-y divide-retroText/10 divide-dashed text-sm font-sans font-bold text-retroText/80">
+                        <tr v-for="(log, index) in filteredLogs" :key="log.id" class="hover:bg-retroPaper/50 transition-colors group" :class="{'bg-retroGreen/10': selectedIds.has(log.id)}">
                             <td class="p-4 text-center">
                                 <input type="checkbox" :checked="selectedIds.has(log.id)" @change="toggleSelect(log.id)">
                             </td>
-                            <td class="p-4 whitespace-nowrap font-semibold">{{ log.date }}</td>
+                            <td class="p-4 whitespace-nowrap font-serif text-retroText font-black">{{ log.date }}</td>
                             <td class="p-4 whitespace-nowrap">{{ log.gameName }}</td>
-                            <td class="p-4 whitespace-nowrap text-primary/70">{{ log.stadium || '-' }}</td>
+                            <td class="p-4 whitespace-nowrap text-retroText/60">{{ log.stadium || '-' }}</td>
                             <td class="p-4 whitespace-nowrap">{{ log.opponent }}</td>
-                            <td v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center">
+                            <td v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center font-serif text-lg">
                                 {{ log[col.key] }}
                             </td>
-                            <td class="p-4 whitespace-nowrap text-right space-x-2">
-                                <button @click="editLog(log)" class="text-slate hover:text-slate/70 font-medium">編輯</button>
-                                <button @click="deleteLog(log.id)" class="text-accent hover:text-accent/70 font-medium">刪除</button>
+                            <td class="p-4 whitespace-nowrap text-right space-x-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                                <button @click="editLog(log)" class="text-retroBlue hover:text-retroText font-bold underline decoration-2 decoration-retroBlue/30 hover:decoration-retroText">編輯</button>
+                                <button @click="deleteLog(log.id)" class="text-retroAccent hover:text-retroText font-bold underline decoration-2 decoration-retroAccent/30 hover:decoration-retroText">刪除</button>
                             </td>
                         </tr>
                         <tr v-if="filteredLogs.length === 0">
-                            <td :colspan="displayColumns.length + 6" class="p-12 text-center text-primary/40 italic font-serif">
-                                尚未有數據，請新增紀錄或匯入資料。<br>
-                                <span class="text-xs text-sage mt-2 block" v-if="isFirebaseMode">系統已連接雲端資料庫，資料將自動同步。</span>
-                                <span class="text-xs text-slate mt-2 block" v-else>目前為本地模式，資料儲存於瀏覽器中。建議定期點擊「匯出備份」保存資料。</span>
+                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 italic font-serif text-lg bg-retroPaper/20">
+                                <div class="mb-4 text-6xl opacity-20 transform rotate-12">⚾</div>
+                                <p>尚未有紀錄，請點擊上方按鈕開始您的野球日記。</p>
+                                <span class="text-xs text-retroGreen mt-4 block opacity-80 font-bold tracking-wide" v-if="isFirebaseMode">☁ 系統已連接雲端資料庫</span>
+                                <span class="text-xs text-retroText mt-4 block opacity-80 font-bold tracking-wide" v-else>💾 本地儲存模式 (建議定期備份)</span>
                             </td>
                         </tr>
                     </tbody>
-                    <tfoot v-if="filteredLogs.length > 0" class="bg-primary/5 font-semibold text-primary">
+                    <tfoot v-if="filteredLogs.length > 0" class="bg-retroText/5 font-black text-retroText border-t-2 border-retroText/20">
                         <tr>
-                            <td colspan="5" class="p-4 text-right font-serif">總計 / 平均</td>
-                            <td v-for="col in displayColumns" :key="col.key" class="p-4 text-center font-sans">
+                            <td colspan="5" class="p-4 text-right font-serif text-base">總計 / 平均</td>
+                            <td v-for="col in displayColumns" :key="col.key" class="p-4 text-center font-sans text-base">
                                 {{ calculateTotal(col.key) }}
                             </td>
                             <td></td>
@@ -232,42 +308,48 @@
         
         <!-- Distribution Charts -->
         <section class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8" v-if="logs.length > 0">
-            <div class="card h-80">
-                <h4 class="font-serif font-bold text-lg mb-4 text-center">{{ currentTab === 'batting' ? '安打類型分佈' : '好壞球/三振保送佔比' }}</h4>
-                <div class="h-60 flex justify-center">
+            <div class="card h-80 border-2 border-dashed border-retroGreen/30">
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-retroGreen/20 rounded-full border border-retroGreen/40 flex items-center justify-center text-xs font-bold text-retroGreen">1</div>
+                <h4 class="font-serif font-bold text-lg mb-4 text-center text-retroText border-b-2 border-retroText/10 pb-2">
+                    {{ currentTab === 'batting' ? '安打類型分佈' : '好壞球/三振保送佔比' }}
+                </h4>
+                <div class="h-56 flex justify-center">
                     <canvas id="distChart1"></canvas>
                 </div>
             </div>
-            <div class="card h-80">
-                 <h4 class="font-serif font-bold text-lg mb-4 text-center">{{ currentTab === 'batting' ? '結果分佈 (上壘 vs 出局)' : '投球結果分佈' }}</h4>
-                <div class="h-60 flex justify-center">
+            <div class="card h-80 border-2 border-dashed border-retroBlue/30">
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-retroBlue/20 rounded-full border border-retroBlue/40 flex items-center justify-center text-xs font-bold text-retroBlue">2</div>
+                 <h4 class="font-serif font-bold text-lg mb-4 text-center text-retroText border-b-2 border-retroText/10 pb-2">
+                    {{ currentTab === 'batting' ? '結果分佈 (上壘 vs 出局)' : '投球結果分佈' }}
+                 </h4>
+                <div class="h-56 flex justify-center">
                     <canvas id="distChart2"></canvas>
                 </div>
             </div>
         </section>
 
         <!-- Bottom Data Management Section -->
-        <footer class="mt-8 border-t border-primary/10 pt-8 pb-12">
-            <div class="text-center mb-4">
-                <h4 class="font-serif font-bold text-primary/70 mb-1">資料管理區</h4>
-                <p class="text-xs text-primary/50">Data Management</p>
+        <footer class="mt-8 border-t-2 border-retroText/10 border-dashed pt-8 pb-12">
+            <div class="text-center mb-6">
+                <h4 class="font-serif font-black text-retroText text-lg mb-1 tracking-widest">資料管理區</h4>
+                <p class="text-[10px] text-retroText/50 tracking-[0.3em]">DATA MANAGEMENT</p>
             </div>
             <div class="flex flex-wrap justify-center gap-4">
                 <div class="relative group">
-                    <label class="btn-tertiary cursor-pointer flex items-center gap-2">
-                        <span>↪︎</span>
+                    <label class="btn-sketch cursor-pointer flex items-center gap-2">
+                        <span class="text-lg">↩</span>
                         <span class="inline sm:hidden">還原</span>
                         <span class="hidden sm:inline">還原備份 (JSON)</span>
                         <input type="file" @change="handleFileUpload" accept=".json" class="hidden">
                     </label>
                 </div>
-                <button @click="exportData" class="btn-tertiary flex items-center gap-2" title="匯出 JSON 備份檔"> 
-                    <span>⎙</span>
+                <button @click="exportData" class="btn-sketch flex items-center gap-2" title="匯出 JSON 備份檔"> 
+                    <span class="text-lg">💾</span>
                     <span class="inline sm:hidden">備份</span>
                     <span class="hidden sm:inline">匯出備份</span> 
                 </button>
-                <button @click="showHelp = true" class="btn-tertiary flex items-center gap-2" title="查看檔案格式說明"> 
-                    <span>ℹ︎</span>
+                <button @click="showHelp = true" class="btn-sketch flex items-center gap-2" title="查看檔案格式說明"> 
+                    <span class="text-lg">📖</span>
                     <span class="inline sm:hidden">說明</span>
                     <span class="hidden sm:inline">匯入說明</span> 
                 </button>
@@ -276,133 +358,132 @@
 
     </main>
 
-    <!-- Modal Form (Same) -->
-    <div v-if="showForm" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-pop-in">
-            <div class="p-6 border-b border-primary/10 flex justify-between items-center">
-                <h2 class="font-serif text-2xl font-semibold text-primary">{{ isEditing ? '編輯紀錄' : '新增紀錄' }} - {{ currentTab === 'batting' ? '打擊' : '投球' }}</h2>
-                <button @click="showForm = false" class="text-2xl text-primary/50 hover:text-primary">&times;</button>
+    <!-- Modal Form -->
+    <div v-if="showForm" class="fixed inset-0 bg-retroText/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+        <div class="bg-retroPaper rounded-sm shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-pop-in border-4 border-retroWhite ring-4 ring-retroText/5 relative">
+            <div class="p-6 border-b-2 border-retroText/10 flex justify-between items-center bg-retroPaper sticky top-0 z-10 border-dashed">
+                <h2 class="font-serif text-2xl font-black text-retroText flex items-center gap-2">
+                    <span class="text-retroGreen text-3xl">⚾</span> {{ isEditing ? '編輯紀錄' : '新增紀錄' }}
+                </h2>
+                <button @click="showForm = false" class="text-3xl text-retroText/40 hover:text-retroAccent font-bold transition-transform hover:rotate-90">&times;</button>
             </div>
-            <form @submit.prevent="submitForm" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form @submit.prevent="submitForm" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 bg-retroWhite/40">
                 <!-- Common Fields -->
-                <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                <div class="md:col-span-2 grid grid-cols-2 gap-6 p-4 bg-white/60 rounded-sm border border-retroText/5 shadow-sm">
                     <div>
-                        <label class="block text-xs font-bold text-primary/60 mb-1">日期 *</label>
+                        <label class="block text-xs font-bold text-retroText/70 mb-1 font-serif uppercase tracking-wide">日期 Date</label>
                         <input v-model="formData.date" type="date" required class="input-field">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-primary/60 mb-1">比賽名稱</label>
+                        <label class="block text-xs font-bold text-retroText/70 mb-1 font-serif uppercase tracking-wide">比賽名稱 Game</label>
                         <input v-model="formData.gameName" type="text" placeholder="例：例行賽 G1" class="input-field">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-primary/60 mb-1">比賽球場</label>
+                        <label class="block text-xs font-bold text-retroText/70 mb-1 font-serif uppercase tracking-wide">球場 Stadium</label>
                         <input v-model="formData.stadium" type="text" placeholder="例：臺北大巨蛋" class="input-field">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-primary/60 mb-1">對手</label>
+                        <label class="block text-xs font-bold text-retroText/70 mb-1 font-serif uppercase tracking-wide">對手 Opponent</label>
                         <input v-model="formData.opponent" type="text" placeholder="對手隊名" class="input-field">
                     </div>
                 </div>
-                <div class="md:col-span-2 border-t border-primary/10 my-2"></div>
+
+                <div class="md:col-span-2 flex items-center gap-4">
+                    <span class="h-px flex-1 bg-retroText/10 border-t border-dashed border-retroText/20"></span>
+                    <span class="text-xs font-bold text-retroText/50 font-serif">詳細數據 STATS</span>
+                    <span class="h-px flex-1 bg-retroText/10 border-t border-dashed border-retroText/20"></span>
+                </div>
+
                 <template v-if="currentTab === 'batting'">
                     <div v-for="field in battingFields" :key="field.key">
-                        <label class="block text-xs font-bold text-primary/60 mb-1">{{ field.label }}</label>
-                        <input v-model.number="formData[field.key]" type="number" min="0" class="input-field bg-gray-50/50">
+                        <label class="block text-xs font-bold text-retroText/60 mb-1 font-serif">{{ field.label }}</label>
+                        <input v-model.number="formData[field.key]" type="number" min="0" class="input-field bg-white/50 focus:bg-white">
                     </div>
                 </template>
                 <template v-else>
                     <div v-for="field in pitchingFields" :key="field.key">
-                        <label class="block text-xs font-bold text-primary/60 mb-1">
+                        <label class="block text-xs font-bold text-retroText/60 mb-1 font-serif">
                             {{ field.label }} 
-                            <span v-if="field.key === 'IP'" class="text-[10px] text-accent font-normal">(輸入 5.1 代表 5局1/3)</span>
+                            <span v-if="field.key === 'IP'" class="text-[10px] text-retroAccent font-normal ml-1">Example: 5.1</span>
                         </label>
-                        <input v-model.number="formData[field.key]" type="number" step="0.1" min="0" class="input-field bg-gray-50/50">
+                        <input v-model.number="formData[field.key]" type="number" step="0.1" min="0" class="input-field bg-white/50 focus:bg-white">
                     </div>
                 </template>
-                <div class="md:col-span-2 mt-4 flex gap-4">
-                    <button type="submit" class="flex-1 btn-primary">{{ isEditing ? '更新' : '儲存' }}</button>
-                    <button type="button" @click="showForm = false" class="flex-1 py-2 rounded text-primary hover:bg-primary/10 transition font-medium">取消</button>
+                
+                <div class="md:col-span-2 mt-4 flex gap-4 pt-6 border-t-2 border-retroText/10 border-dashed">
+                    <button type="submit" class="flex-1 btn-primary text-lg">{{ isEditing ? '保存修改' : '寫入日記' }}</button>
+                    <button type="button" @click="showForm = false" class="flex-1 btn-sketch text-retroText/60 border-retroText/20 hover:border-retroText/50">取消</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Help Modal (Updated for JSON) -->
-    <div v-if="showHelp" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-pop-in">
-            <div class="p-6 border-b border-primary/10 flex justify-between items-center flex-shrink-0">
-                <h2 class="font-serif text-xl font-semibold text-primary">檔案功能說明</h2>
-                <button @click="showHelp = false" class="text-2xl text-primary/50 hover:text-primary">&times;</button>
+    <!-- Help Modal -->
+    <div v-if="showHelp" class="fixed inset-0 bg-retroText/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+        <div class="bg-retroPaper rounded-sm shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-pop-in border-4 border-retroWhite ring-4 ring-retroText/5 relative">
+            <!-- 裝飾：頂部膠帶 -->
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-1/3 h-8 bg-retroPaper/80 border border-retroText/10 shadow-sm rotate-[1.5deg] z-20 pointer-events-none"></div>
+
+            <div class="p-6 border-b-2 border-retroText/10 flex justify-between items-center flex-shrink-0 bg-retroPaper sticky top-0 z-10 border-dashed">
+                <h2 class="font-serif text-xl font-black text-retroText">📖 檔案功能說明</h2>
+                <button @click="showHelp = false" class="text-2xl text-retroText/50 hover:text-retroAccent font-bold transition-transform hover:rotate-90">&times;</button>
             </div>
             
-            <div class="p-6 text-sm text-primary/80 modal-body space-y-4">
-                <div class="bg-sage/10 p-4 rounded mb-4">
-                    <h4 class="font-bold text-sage mb-2">資料備份與還原</h4>
-                    <p class="mb-2"><strong>匯出備份：</strong> 點擊「匯出備份」按鈕，系統會下載一個 <code>.json</code> 檔案。請妥善保存此檔案，它是您所有紀錄的備份。</p>
-                    <p><strong>還原備份：</strong> 點擊「還原備份」按鈕並選擇您的 <code>.json</code> 備份檔，即可將資料還原。</p>
+            <div class="p-6 text-sm text-retroText modal-body space-y-6 bg-retroWhite/40">
+                <div class="bg-retroGreen/10 p-4 rounded-sm border-l-4 border-retroGreen shadow-sm">
+                    <h4 class="font-bold text-retroGreen mb-2 font-serif text-base">資料備份與還原</h4>
+                    <p class="mb-2 font-medium"><strong>匯出備份：</strong> 點擊「匯出備份」按鈕，系統會下載一個 <code>.json</code> 檔案。請妥善保存此檔案。</p>
+                    <p class="font-medium"><strong>還原備份：</strong> 點擊「還原備份」按鈕並選擇您的 <code>.json</code> 備份檔，即可將資料還原。</p>
                 </div>
 
-                <p>若使用 Excel (.xlsx) 或 CSV 匯入，系統支援模糊對應（中文、英文、大小寫皆可）：</p>
-                <div class="bg-primary/5 p-4 rounded">
-                    <h4 class="font-bold text-sage mb-2">通用欄位 (建議)</h4>
-                    <p class="leading-relaxed">
-                        • <strong>日期</strong> (Date)<br>
-                        • <strong>比賽名稱</strong> (Game)<br>
-                        • <strong>比賽球場</strong> (Stadium)<br>
-                        • <strong>對手</strong> (Opponent)
-                    </p>
+                <div>
+                    <p class="font-bold text-retroText/80 mb-2 font-serif border-b border-retroText/20 inline-block pb-1">CSV / Excel 匯入通用欄位</p>
+                    <div class="bg-retroWhite p-4 rounded-sm border-2 border-retroText/10 shadow-sm border-dashed font-serif text-retroText/80">
+                        <p class="leading-relaxed font-bold">
+                            • 日期 <span class="font-sans font-normal text-xs opacity-60">(Date)</span><br>
+                            • 比賽名稱 <span class="font-sans font-normal text-xs opacity-60">(Game)</span><br>
+                            • 比賽球場 <span class="font-sans font-normal text-xs opacity-60">(Stadium)</span><br>
+                            • 對手 <span class="font-sans font-normal text-xs opacity-60">(Opponent)</span>
+                        </p>
+                    </div>
                 </div>
                  <div v-if="currentTab === 'batting'">
-                    <h4 class="font-bold text-sage mb-2 mt-4">打擊數據欄位</h4>
-                    <table class="w-full text-left border-collapse">
-                        <tr class="border-b border-primary/10"><th class="py-1">代碼/中文</th><th class="py-1">說明</th></tr>
-                        <tr><td class="py-1">PA, 打席</td><td>打席</td></tr>
-                        <tr><td class="py-1">AB, 打數</td><td>打數</td></tr>
-                        <tr><td class="py-1">H, 安打, 安</td><td>安打 (總數)</td></tr>
-                        <tr><td class="py-1">2B, 二壘打, 二安</td><td>二壘打</td></tr>
-                        <tr><td class="py-1">3B, 三壘打, 三安</td><td>三壘打</td></tr>
-                        <tr><td class="py-1">HR, 全壘打, 轟</td><td>全壘打</td></tr>
-                        <tr><td class="py-1">RBI, 打點</td><td>打點</td></tr>
-                        <tr><td class="py-1">BB, 四壞, 保送</td><td>四壞保送</td></tr>
-                        <tr><td class="py-1">SO, K, 三振</td><td>三振</td></tr>
-                        <tr><td class="py-1">SB, 盜壘</td><td>盜壘</td></tr>
-                        <tr><td class="py-1">SF, 高飛犧牲, 犧飛</td><td>高飛犧牲</td></tr>
+                    <h4 class="font-bold text-retroText mb-2 mt-2 font-serif">打擊數據對照表</h4>
+                    <table class="w-full text-left border-collapse bg-retroWhite shadow-sm border-2 border-retroText/10 border-dashed">
+                        <tr class="bg-retroText/5 text-retroText"><th class="p-2 border-b border-retroText/10 border-dashed font-serif">代碼/中文</th><th class="p-2 border-b border-retroText/10 border-dashed font-serif">說明</th></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">PA, 打席</td><td class="p-2 border-b border-retroText/5 border-dashed">打席</td></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">AB, 打數</td><td class="p-2 border-b border-retroText/5 border-dashed">打數</td></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">H, 安打</td><td class="p-2 border-b border-retroText/5 border-dashed">安打 (總數)</td></tr>
                     </table>
                 </div>
                 <div v-if="currentTab === 'pitching'">
-                    <h4 class="font-bold text-sage mb-2 mt-4">投球數據欄位</h4>
-                    <table class="w-full text-left border-collapse">
-                        <tr class="border-b border-primary/10"><th class="py-1">代碼/中文</th><th class="py-1">說明</th></tr>
-                        <tr><td class="py-1">IP, 局數</td><td>局數 (例: 5.1)</td></tr>
-                        <tr><td class="py-1">W, 勝, 勝投</td><td>勝投</td></tr>
-                        <tr><td class="py-1">L, 敗, 敗投</td><td>敗投</td></tr>
-                        <tr><td class="py-1">H, 被安打, 安打</td><td>被安打</td></tr>
-                        <tr><td class="py-1">R, 失分</td><td>失分</td></tr>
-                        <tr><td class="py-1">ER, 責失</td><td>責失分</td></tr>
-                        <tr><td class="py-1">BB, 四壞, 保送</td><td>四壞保送</td></tr>
-                        <tr><td class="py-1">K, 三振</td><td>三振 (或 SO)</td></tr>
-                        <tr><td class="py-1">HR, 被全壘打</td><td>被全壘打</td></tr>
+                    <h4 class="font-bold text-retroText mb-2 mt-2 font-serif">投球數據對照表</h4>
+                    <table class="w-full text-left border-collapse bg-retroWhite shadow-sm border-2 border-retroText/10 border-dashed">
+                        <tr class="bg-retroBlue/10 text-retroText"><th class="p-2 border-b border-retroText/10 border-dashed font-serif">代碼/中文</th><th class="p-2 border-b border-retroText/10 border-dashed font-serif">說明</th></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">IP, 局數</td><td class="p-2 border-b border-retroText/5 border-dashed">局數</td></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">W, 勝</td><td class="p-2 border-b border-retroText/5 border-dashed">勝投</td></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">H, 被安打</td><td class="p-2 border-b border-retroText/5 border-dashed">被安打</td></tr>
                     </table>
                 </div>
             </div>
-            <div class="p-4 border-t border-primary/10 text-center flex-shrink-0">
-                <button @click="showHelp = false" class="btn-primary w-full">我知道了</button>
+            <div class="p-4 border-t-2 border-retroText/10 text-center flex-shrink-0 bg-retroPaper/80 border-dashed">
+                <button @click="showHelp = false" class="btn-primary w-full shadow-none border-b-2">我知道了</button>
             </div>
         </div>
     </div>
 
     <!-- Custom Dialog Modal -->
-    <div v-if="dialog.show" class="fixed inset-0 bg-primary/40 backdrop-blur-sm flex justify-center items-center z-[60] p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-pop-in">
-            <div class="p-6 text-center">
-                <div class="text-4xl mb-4">{{ dialog.icon }}</div>
-                <h3 class="font-serif text-xl font-semibold text-primary mb-2">{{ dialog.title }}</h3>
-                <p class="text-primary/70 text-sm leading-relaxed">{{ dialog.message }}</p>
+    <div v-if="dialog.show" class="fixed inset-0 bg-retroText/40 backdrop-blur-sm flex justify-center items-center z-[60] p-4">
+        <div class="bg-retroPaper rounded-sm shadow-paper-pop w-full max-w-sm flex flex-col overflow-hidden animate-pop-in border-4 border-retroWhite ring-4 ring-retroText/5 relative">
+            <div class="p-8 text-center bg-retroWhite/40">
+                <div class="text-6xl mb-4 text-retroText/80">{{ dialog.icon }}</div>
+                <h3 class="font-serif text-2xl font-black text-retroText mb-3">{{ dialog.title }}</h3>
+                <p class="text-retroText/80 text-sm leading-relaxed font-bold font-serif">{{ dialog.message }}</p>
             </div>
-            <div class="flex border-t border-primary/10">
-                <button v-if="dialog.isConfirm" @click="dialog.show = false" class="flex-1 py-3 text-primary/60 hover:bg-primary/5 transition font-medium">取消</button>
-                <div v-if="dialog.isConfirm" class="w-px bg-primary/10"></div>
-                <button @click="handleDialogConfirm" :class="['flex-1 py-3 text-white transition font-medium', dialog.isConfirm ? 'bg-accent hover:bg-accent/90' : 'bg-sage hover:bg-sage/90']">
+            <div class="flex border-t-2 border-retroText/10 border-dashed">
+                <button v-if="dialog.isConfirm" @click="dialog.show = false" class="flex-1 py-4 text-retroText/60 hover:bg-retroText/5 transition font-bold font-serif">取消</button>
+                <div v-if="dialog.isConfirm" class="w-0.5 bg-retroText/10 border-r border-dashed border-retroText/20"></div>
+                <button @click="handleDialogConfirm" :class="['flex-1 py-4 text-retroWhite transition font-bold font-serif', dialog.isConfirm ? 'bg-retroAccent hover:bg-retroAccent/90' : 'bg-retroGreen hover:bg-retroGreen/90']">
                     {{ dialog.confirmText || '確定' }}
                 </button>
             </div>
@@ -420,7 +501,7 @@
 
     createApp({
         setup() {
-            // Check for Firebase Config
+            // Firebase setup
             let isFirebaseAvailable = false;
             let db = null;
             let auth = null;
@@ -439,16 +520,13 @@
                 console.warn("Firebase Init Skipped: Running in Local Mode");
             }
 
-            // Global State
             const isFirebaseMode = ref(isFirebaseAvailable);
             const user = ref(null);
             
-            // Register DataLabels
             if (typeof ChartDataLabels !== 'undefined') {
                 Chart.register(ChartDataLabels);
             }
 
-            // App State
             const currentTab = ref('batting');
             const showForm = ref(false);
             const showHelp = ref(false);
@@ -458,25 +536,19 @@
             const selectedIds = ref(new Set());
             const chartMode = ref('trend');
             
-            // Dialog
             const dialog = ref({ show: false, title: '', message: '', icon: '', isConfirm: false, confirmText: '', onConfirm: null });
 
-            // Chart Refs
             let trendChartInstance = null;
             let distChart1Instance = null;
             let distChart2Instance = null;
 
-            // Form Data Structure
             const defaultFormData = {
                 date: new Date().toISOString().split('T')[0], gameName: '', stadium: '', opponent: '',
-                // Batting
                 PA: 0, AB: 0, H: 0, B2: 0, B3: 0, HR: 0, RBI: 0, BB: 0, SO: 0, SF: 0, SB: 0,
-                // Pitching
                 IP: 0, H_p: 0, R: 0, ER: 0, BB_p: 0, SO_p: 0, HR_p: 0, W: 0, L: 0, SV: 0
             };
             const formData = ref({ ...defaultFormData });
 
-            // Fields
             const battingFields = [
                 { key: 'PA', label: '打席 (PA)' }, { key: 'AB', label: '打數 (AB)' },
                 { key: 'H', label: '安打 (H)' }, { key: 'B2', label: '二壘打 (2B)' },
@@ -493,7 +565,6 @@
                 { key: 'HR_p', label: '被全壘打 (HR)' }
             ];
 
-            // Computed Properties
             const displayColumns = computed(() => {
                 if (currentTab.value === 'batting') return [{key:'AB',label:'AB'},{key:'H',label:'H'},{key:'HR',label:'HR'},{key:'RBI',label:'RBI'},{key:'AVG',label:'AVG'},{key:'OPS',label:'OPS'}];
                 return [{key:'IP',label:'IP'},{key:'H_p',label:'H'},{key:'ER',label:'ER'},{key:'SO_p',label:'K'},{key:'BB_p',label:'BB'},{key:'ERA',label:'ERA'},{key:'WHIP',label:'WHIP'}];
@@ -543,7 +614,6 @@
                 }
             });
 
-            // Init
             onMounted(() => {
                 if (isFirebaseAvailable) {
                     const initAuth = async () => {
@@ -577,18 +647,16 @@
                 renderCharts();
             });
 
-            // Export Data Function
             function exportData() {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs.value));
                 const downloadAnchorNode = document.createElement('a');
                 downloadAnchorNode.setAttribute("href", dataStr);
                 downloadAnchorNode.setAttribute("download", "baseball_data_backup.json");
-                document.body.appendChild(downloadAnchorNode); // required for firefox
+                document.body.appendChild(downloadAnchorNode); 
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
             }
 
-            // Updated File Upload Handler
             function handleFileUpload(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -596,35 +664,21 @@
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     let newLogs = [];
-                    
-                    // Handle JSON
                     if (file.name.endsWith('.json')) {
                         try {
                             const json = JSON.parse(e.target.result);
-                            if (Array.isArray(json)) {
-                                newLogs = json;
-                            } else {
-                                showAlert('錯誤', 'JSON 格式不正確');
-                                return;
-                            }
-                        } catch(err) {
-                            showAlert('錯誤', '無法解析 JSON 檔案');
-                            return;
-                        }
-                    } 
-                    // Handle Excel/CSV
-                    else {
+                            if (Array.isArray(json)) newLogs = json;
+                            else { showAlert('錯誤', 'JSON 格式不正確'); return; }
+                        } catch(err) { showAlert('錯誤', '無法解析 JSON 檔案'); return; }
+                    } else {
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
                         const sheet = workbook.Sheets[workbook.SheetNames[0]];
                         const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
                         if(!json.length) { showAlert('錯誤','無資料'); return; }
                         
-                        // Robust getter function
                         const getVal = (row, keys) => {
-                            for (let key of keys) {
-                                if (row[key] !== undefined) return row[key];
-                            }
+                            for (let key of keys) { if (row[key] !== undefined) return row[key]; }
                             const rowKeys = Object.keys(row);
                             for (let key of keys) {
                                 const foundKey = rowKeys.find(k => k.toLowerCase().trim() === key.toLowerCase().trim());
@@ -632,7 +686,6 @@
                             }
                             return 0; 
                         };
-
                         const getStringVal = (row, keys, defaultVal = '') => {
                              const val = getVal(row, keys);
                              return (val === 0 || val === undefined) ? defaultVal : String(val);
@@ -655,59 +708,27 @@
                                 gameName: getStringVal(row, ['Game', '比賽名稱', '比賽', 'Event'], '匯入賽事'),
                                 stadium: getStringVal(row, ['Stadium', '球場', '地點', 'Place'], ''),
                                 opponent: getStringVal(row, ['Opponent', '對手', 'VS'], ''),
-                                
-                                PA: Number(getVal(row, ['PA', '打席'])) || 0,
-                                AB: Number(getVal(row, ['AB', '打數'])) || 0,
-                                H: Number(getVal(row, ['H', '安打', '安'])) || 0,
-                                B2: Number(getVal(row, ['2B', '二壘打', '二安'])) || 0,
-                                B3: Number(getVal(row, ['3B', '三壘打', '三安'])) || 0,
-                                HR: Number(getVal(row, ['HR', '全壘打', '轟'])) || 0,
-                                RBI: Number(getVal(row, ['RBI', '打點'])) || 0,
-                                BB: Number(getVal(row, ['BB', '四壞', '保送'])) || 0,
-                                SO: Number(getVal(row, ['SO', 'K', '三振'])) || 0,
-                                SB: Number(getVal(row, ['SB', '盜壘'])) || 0,
-                                SF: Number(getVal(row, ['SF', '高飛犧牲', '犧飛'])) || 0,
-
-                                IP: Number(getVal(row, ['IP', '局數'])) || 0,
-                                W: Number(getVal(row, ['W', '勝', '勝投'])) || 0,
-                                L: Number(getVal(row, ['L', '敗', '敗投'])) || 0,
-                                SV: Number(getVal(row, ['SV', 'S', '救援', '救援成功'])) || 0,
-                                H_p: Number(getVal(row, ['H', '被安打', '安打'])) || 0, 
-                                R: Number(getVal(row, ['R', '失分'])) || 0,
-                                ER: Number(getVal(row, ['ER', '責失', '責失分'])) || 0,
-                                BB_p: Number(getVal(row, ['BB', '四壞', '保送'])) || 0,
-                                SO_p: Number(getVal(row, ['SO', 'K', '三振'])) || 0,
-                                HR_p: Number(getVal(row, ['HR', '被全壘打', '全壘打'])) || 0
+                                PA: Number(getVal(row, ['PA', '打席'])) || 0, AB: Number(getVal(row, ['AB', '打數'])) || 0, H: Number(getVal(row, ['H', '安打', '安'])) || 0, B2: Number(getVal(row, ['2B', '二壘打', '二安'])) || 0, B3: Number(getVal(row, ['3B', '三壘打', '三安'])) || 0, HR: Number(getVal(row, ['HR', '全壘打', '轟'])) || 0, RBI: Number(getVal(row, ['RBI', '打點'])) || 0, BB: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO: Number(getVal(row, ['SO', 'K', '三振'])) || 0, SB: Number(getVal(row, ['SB', '盜壘'])) || 0, SF: Number(getVal(row, ['SF', '高飛犧牲', '犧飛'])) || 0,
+                                IP: Number(getVal(row, ['IP', '局數'])) || 0, W: Number(getVal(row, ['W', '勝', '勝投'])) || 0, L: Number(getVal(row, ['L', '敗', '敗投'])) || 0, SV: Number(getVal(row, ['SV', 'S', '救援', '救援成功'])) || 0, H_p: Number(getVal(row, ['H', '被安打', '安打'])) || 0, R: Number(getVal(row, ['R', '失分'])) || 0, ER: Number(getVal(row, ['ER', '責失', '責失分'])) || 0, BB_p: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO_p: Number(getVal(row, ['SO', 'K', '三振'])) || 0, HR_p: Number(getVal(row, ['HR', '被全壘打', '全壘打'])) || 0
                             }; 
                         });
                     }
 
                     if(isFirebaseAvailable) {
                         const batch = writeBatch(db);
-                        newLogs.forEach(l => {
-                            const { id, ...cleanData } = l; 
-                            batch.set(doc(collection(db,'artifacts',appId,'public','data','baseball_logs')), cleanData);
-                        });
+                        newLogs.forEach(l => { const { id, ...cleanData } = l; batch.set(doc(collection(db,'artifacts',appId,'public','data','baseball_logs')), cleanData); });
                         await batch.commit();
                     } else {
-                        newLogs.forEach(l => { 
-                            l.id = Date.now() + Math.random(); 
-                            logs.value.push(l); 
-                        });
+                        newLogs.forEach(l => { l.id = Date.now() + Math.random(); logs.value.push(l); });
                         localStorage.setItem('baseball_logs', JSON.stringify(logs.value));
                     }
                     showAlert('成功', `已匯入/還原 ${newLogs.length} 筆資料`);
                     event.target.value = '';
                 };
-                
-                if (file.name.endsWith('.json')) {
-                    reader.readAsText(file);
-                } else {
-                    reader.readAsArrayBuffer(file);
-                }
+                if (file.name.endsWith('.json')) reader.readAsText(file);
+                else reader.readAsArrayBuffer(file);
             }
 
-            // CRUD Operations
             async function submitForm() {
                 const payload = { ...formData.value, type: currentTab.value };
                 if (isFirebaseAvailable && user.value) {
@@ -717,33 +738,20 @@
                             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', payload.id);
                             const { id, ...data } = payload;
                             await updateDoc(docRef, data);
-                        } else {
-                            delete payload.id;
-                            await addDoc(colRef, payload);
-                        }
+                        } else { delete payload.id; await addDoc(colRef, payload); }
                     } catch (e) { showAlert('錯誤', '雲端儲存失敗'); }
                 } else {
-                    if (isEditing.value) {
-                        const idx = logs.value.findIndex(l => l.id === payload.id);
-                        if (idx !== -1) logs.value[idx] = payload;
-                    } else {
-                        payload.id = Date.now();
-                        logs.value.push(payload);
-                    }
+                    if (isEditing.value) { const idx = logs.value.findIndex(l => l.id === payload.id); if (idx !== -1) logs.value[idx] = payload; } 
+                    else { payload.id = Date.now(); logs.value.push(payload); }
                     localStorage.setItem('baseball_logs', JSON.stringify(logs.value));
                 }
-                showForm.value = false;
-                resetForm();
+                showForm.value = false; resetForm();
             }
 
             async function deleteLog(id) {
                 showConfirm('刪除確認', '確定要刪除嗎？', async () => {
-                    if (isFirebaseAvailable && user.value) {
-                        try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', id)); } catch(e){}
-                    } else {
-                        logs.value = logs.value.filter(l => l.id !== id);
-                        localStorage.setItem('baseball_logs', JSON.stringify(logs.value));
-                    }
+                    if (isFirebaseAvailable && user.value) { try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', id)); } catch(e){} } 
+                    else { logs.value = logs.value.filter(l => l.id !== id); localStorage.setItem('baseball_logs', JSON.stringify(logs.value)); }
                     if(selectedIds.value.has(id)) selectedIds.value.delete(id);
                 });
             }
@@ -752,9 +760,7 @@
                 showConfirm('刪除確認', `刪除 ${selectedIds.value.size} 筆？`, async () => {
                     if (isFirebaseAvailable && user.value) {
                         const batch = writeBatch(db);
-                        selectedIds.value.forEach(id => {
-                            batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', id));
-                        });
+                        selectedIds.value.forEach(id => { batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'baseball_logs', id)); });
                         await batch.commit();
                     } else {
                         logs.value = logs.value.filter(l => !selectedIds.value.has(l.id));
@@ -764,7 +770,6 @@
                 });
             }
 
-            // Utils (Same)
             function convertIPtoOuts(ip) { const s = String(ip).split('.'); return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0); }
             function convertOutsToIP(outs) { return (outs % 3 === 0) ? Math.floor(outs/3) : parseFloat(`${Math.floor(outs/3)}.${outs%3}`); }
             function calculateStats(log) {
@@ -788,15 +793,8 @@
                 return key === 'IP' ? convertOutsToIP(filteredLogs.value.reduce((s,i)=>s+convertIPtoOuts(i.IP),0)) : total;
             }
             function calculateGroupStat(groupLogs) {
-                if (currentTab.value === 'batting') {
-                    const h = groupLogs.reduce((s,l)=>s+(l.H||0),0);
-                    const ab = groupLogs.reduce((s,l)=>s+(l.AB||0),0);
-                    return ab ? h/ab : 0;
-                } else {
-                    const er = groupLogs.reduce((s,l)=>s+(l.ER||0),0);
-                    const outs = groupLogs.reduce((s,l)=>s+convertIPtoOuts(l.IP),0);
-                    return outs ? er*9/(outs/3) : 0;
-                }
+                if (currentTab.value === 'batting') { const h = groupLogs.reduce((s,l)=>s+(l.H||0),0); const ab = groupLogs.reduce((s,l)=>s+(l.AB||0),0); return ab ? h/ab : 0; } 
+                else { const er = groupLogs.reduce((s,l)=>s+(l.ER||0),0); const outs = groupLogs.reduce((s,l)=>s+convertIPtoOuts(l.IP),0); return outs ? er*9/(outs/3) : 0; }
             }
             function sortBy(k){ logs.value.sort((a,b)=>(b[k]||0)-(a[k]||0)); }
             function editLog(l){ formData.value={...l}; currentTab.value=l.type; isEditing.value=true; showForm.value=true; }
@@ -807,7 +805,6 @@
             function showAlert(t,m,e=false){ dialog.value={show:true,title:t,message:m,icon:e?'❌':'✅',isConfirm:false,confirmText:'好',onConfirm:null}; }
             function handleDialogConfirm(){ if(dialog.value.onConfirm) dialog.value.onConfirm(); dialog.value.show=false; }
 
-            // Chart Rendering
             function renderCharts() {
                 nextTick(() => {
                     const ctxTrend = document.getElementById('trendChart');
@@ -820,8 +817,8 @@
 
                     if (!ctxTrend) return;
 
-                    const primaryColor = '#8CA694';
-                    const secondaryColor = '#88A6B0';
+                    const primaryColor = '#8CA694'; // 復古綠
+                    const secondaryColor = '#88A6B0'; // 復古藍
 
                     let labels, mainData, chartType;
 
@@ -843,9 +840,38 @@
                         type: chartType,
                         data: {
                             labels: labels,
-                            datasets: [{ label: currentTab.value==='batting'?'AVG':'ERA', data: mainData, borderColor: '#8CA694', backgroundColor: chartType==='line'?'#8CA69433':'#8CA694', tension: 0.3, fill: chartType==='line' }]
+                            datasets: [{ 
+                                label: currentTab.value==='batting'?'AVG':'ERA', 
+                                data: mainData, 
+                                borderColor: primaryColor, 
+                                backgroundColor: chartType==='line'?'rgba(140, 166, 148, 0.2)':primaryColor, 
+                                tension: 0.3, 
+                                fill: chartType==='line',
+                                borderWidth: 2,
+                                pointBackgroundColor: '#F2E8D5',
+                                pointBorderColor: primaryColor,
+                                pointRadius: 4
+                            }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false}, datalabels: {display:false} }, scales: { y: {beginAtZero: chartType==='bar'} } }
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            plugins: { 
+                                legend: {display:false}, 
+                                datalabels: {display:false} 
+                            }, 
+                            scales: { 
+                                y: {
+                                    beginAtZero: chartType==='bar',
+                                    grid: { color: 'rgba(115, 99, 87, 0.1)', borderDash: [5, 5] },
+                                    ticks: { font: { family: "'Noto Sans TC', sans-serif" }, color: '#736357' }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { family: "'Noto Sans TC', sans-serif" }, color: '#736357' }
+                                }
+                            } 
+                        }
                     });
 
                     if (ctxDist1 && ctxDist2) {
@@ -861,8 +887,32 @@
                             l2=['勝','敗','救援']; d2=[d.reduce((s,i)=>s+(i.W||0),0), d.reduce((s,i)=>s+(i.L||0),0), d.reduce((s,i)=>s+(i.SV||0),0)];
                         }
 
-                        distChart1Instance = new Chart(ctxDist1, { type: 'doughnut', data: { labels: l1, datasets: [{ data: d1, backgroundColor: ['#8CA694','#88A6B0','#D97C6E','#F2E8D5'] }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{ datalabels:{ color:'#fff', font:{weight:'bold'}, formatter:(v,c)=>{let s=0;c.chart.data.datasets[0].data.map(n=>s+=n);return s?(v*100/s).toFixed(1)+'%':'';} } } } });
-                        distChart2Instance = new Chart(ctxDist2, { type: 'bar', data: { labels: l2, datasets: [{ label:'數量', data: d2, backgroundColor:'#736357' }] }, options: { responsive:true, maintainAspectRatio:false, plugins:{ datalabels:{display:false} } } });
+                        // Retro Color Palette for Charts
+                        const retroColors = ['#8CA694', '#88A6B0', '#D97C6E', '#736357'];
+
+                        distChart1Instance = new Chart(ctxDist1, { 
+                            type: 'doughnut', 
+                            data: { labels: l1, datasets: [{ data: d1, backgroundColor: retroColors, borderColor: '#F2E8D5', borderWidth: 2 }] }, 
+                            options: { 
+                                responsive:true, maintainAspectRatio:false, 
+                                plugins:{ 
+                                    legend: { position: 'bottom', labels: { font: { family: "'Noto Sans TC', sans-serif" }, color: '#736357' } },
+                                    datalabels:{ color:'#F2E8D5', font:{weight:'bold'}, formatter:(v,c)=>{let s=0;c.chart.data.datasets[0].data.map(n=>s+=n);return s?(v*100/s).toFixed(1)+'%':'';} } 
+                                } 
+                            } 
+                        });
+                        distChart2Instance = new Chart(ctxDist2, { 
+                            type: 'bar', 
+                            data: { labels: l2, datasets: [{ label:'數量', data: d2, backgroundColor: '#736357' }] }, 
+                            options: { 
+                                responsive:true, maintainAspectRatio:false, 
+                                scales: { 
+                                    y: { grid: { color: 'rgba(115, 99, 87, 0.1)', borderDash: [5, 5] }, ticks: { color: '#736357' } },
+                                    x: { grid: { display: false }, ticks: { color: '#736357' } }
+                                },
+                                plugins:{ legend:{display:false}, datalabels:{display:false} } 
+                            } 
+                        });
                     }
                 });
             }
