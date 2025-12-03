@@ -54,7 +54,6 @@
         .btn-secondary {
             @apply bg-slate text-white px-4 py-2 rounded shadow hover:bg-opacity-70 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center;
         }
-        /* Updated: More subtle/transparent style for bottom buttons */
         .btn-tertiary {
             @apply bg-white/40 text-primary/70 border border-primary/10 px-4 py-2 rounded hover:bg-white hover:text-primary hover:shadow-sm hover:border-primary/20 transition-all duration-300 font-sans tracking-wide font-medium flex items-center justify-center backdrop-blur-[2px];
         }
@@ -106,11 +105,6 @@
         <div class="mb-4 md:mb-0 text-center md:text-left">
             <h1 class="font-serif text-3xl md:text-4xl font-bold tracking-wider text-primary">小魏的野球數據</h1>
             <p class="text-sm tracking-widest text-primary/70 mt-1 uppercase font-medium">Baseball Logs Analytics</p>
-            <!-- Storage Indicator -->
-            <div class="mt-1 text-xs font-bold inline-flex items-center gap-1" :class="isFirebaseMode ? 'text-sage' : 'text-slate'">
-                <span class="w-2 h-2 rounded-full" :class="isFirebaseMode ? 'bg-sage' : 'bg-slate'"></span>
-                {{ isFirebaseMode ? '雲端同步中 (Cloud)' : '本地儲存模式 (Local)' }}
-            </div>
         </div>
         
         <div class="flex gap-4">
@@ -164,7 +158,7 @@
                         <span>✉︎</span>
                         <span class="inline sm:hidden">匯入</span>
                         <span class="hidden sm:inline">匯入 (CSV/XLSX)</span>
-                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls" class="hidden">
+                        <input type="file" @change="handleFileUpload" accept=".csv, .xlsx, .xls, .json" class="hidden">
                     </label>
                 </div>
             </div>
@@ -263,7 +257,7 @@
                     <label class="btn-tertiary cursor-pointer flex items-center gap-2">
                         <span>↪︎</span>
                         <span class="inline sm:hidden">還原</span>
-                        <span class="hidden sm:inline">還原備份 (json)</span>
+                        <span class="hidden sm:inline">還原備份 (JSON)</span>
                         <input type="file" @change="handleFileUpload" accept=".json" class="hidden">
                     </label>
                 </div>
@@ -348,47 +342,46 @@
                     <p><strong>還原備份：</strong> 點擊「還原備份」按鈕並選擇您的 <code>.json</code> 備份檔，即可將資料還原。</p>
                 </div>
 
-                <p>若使用 Excel (.xlsx) 或 CSV 匯入，請確保第一列包含以下欄位：</p>
+                <p>若使用 Excel (.xlsx) 或 CSV 匯入，系統支援模糊對應（中文、英文、大小寫皆可）：</p>
                 <div class="bg-primary/5 p-4 rounded">
                     <h4 class="font-bold text-sage mb-2">通用欄位 (建議)</h4>
                     <p class="leading-relaxed">
-                        • <strong>日期 (Date)</strong><br>
-                        • <strong>比賽名稱 (Game)</strong><br>
-                        • <strong>比賽球場 (Stadium)</strong><br>
-                        • <strong>對手 (Opponent)</strong>
+                        • <strong>日期</strong> (Date)<br>
+                        • <strong>比賽名稱</strong> (Game)<br>
+                        • <strong>比賽球場</strong> (Stadium)<br>
+                        • <strong>對手</strong> (Opponent)
                     </p>
                 </div>
-                <!-- ... (Column tables same as before) ... -->
                  <div v-if="currentTab === 'batting'">
                     <h4 class="font-bold text-sage mb-2 mt-4">打擊數據欄位</h4>
                     <table class="w-full text-left border-collapse">
-                        <tr class="border-b border-primary/10"><th class="py-1">代碼</th><th class="py-1">中文說明</th></tr>
-                        <tr><td class="py-1">PA</td><td>打席</td></tr>
-                        <tr><td class="py-1">AB</td><td>打數</td></tr>
-                        <tr><td class="py-1">H</td><td>安打 (總數)</td></tr>
-                        <tr><td class="py-1">2B</td><td>二壘打</td></tr>
-                        <tr><td class="py-1">3B</td><td>三壘打</td></tr>
-                        <tr><td class="py-1">HR</td><td>全壘打</td></tr>
-                        <tr><td class="py-1">RBI</td><td>打點</td></tr>
-                        <tr><td class="py-1">BB</td><td>四壞保送</td></tr>
-                        <tr><td class="py-1">SO</td><td>三振</td></tr>
-                        <tr><td class="py-1">SB</td><td>盜壘</td></tr>
-                        <tr><td class="py-1">SF</td><td>高飛犧牲</td></tr>
+                        <tr class="border-b border-primary/10"><th class="py-1">代碼/中文</th><th class="py-1">說明</th></tr>
+                        <tr><td class="py-1">PA, 打席</td><td>打席</td></tr>
+                        <tr><td class="py-1">AB, 打數</td><td>打數</td></tr>
+                        <tr><td class="py-1">H, 安打, 安</td><td>安打 (總數)</td></tr>
+                        <tr><td class="py-1">2B, 二壘打, 二安</td><td>二壘打</td></tr>
+                        <tr><td class="py-1">3B, 三壘打, 三安</td><td>三壘打</td></tr>
+                        <tr><td class="py-1">HR, 全壘打, 轟</td><td>全壘打</td></tr>
+                        <tr><td class="py-1">RBI, 打點</td><td>打點</td></tr>
+                        <tr><td class="py-1">BB, 四壞, 保送</td><td>四壞保送</td></tr>
+                        <tr><td class="py-1">SO, K, 三振</td><td>三振</td></tr>
+                        <tr><td class="py-1">SB, 盜壘</td><td>盜壘</td></tr>
+                        <tr><td class="py-1">SF, 高飛犧牲, 犧飛</td><td>高飛犧牲</td></tr>
                     </table>
                 </div>
                 <div v-if="currentTab === 'pitching'">
                     <h4 class="font-bold text-sage mb-2 mt-4">投球數據欄位</h4>
                     <table class="w-full text-left border-collapse">
-                        <tr class="border-b border-primary/10"><th class="py-1">代碼</th><th class="py-1">中文說明</th></tr>
-                        <tr><td class="py-1">IP</td><td>局數 (例: 5.1)</td></tr>
-                        <tr><td class="py-1">W</td><td>勝投 (1或0)</td></tr>
-                        <tr><td class="py-1">L</td><td>敗投 (1或0)</td></tr>
-                        <tr><td class="py-1">H</td><td>被安打</td></tr>
-                        <tr><td class="py-1">R</td><td>失分</td></tr>
-                        <tr><td class="py-1">ER</td><td>責失分</td></tr>
-                        <tr><td class="py-1">BB</td><td>四壞保送</td></tr>
-                        <tr><td class="py-1">K</td><td>三振 (或 SO)</td></tr>
-                        <tr><td class="py-1">HR</td><td>被全壘打</td></tr>
+                        <tr class="border-b border-primary/10"><th class="py-1">代碼/中文</th><th class="py-1">說明</th></tr>
+                        <tr><td class="py-1">IP, 局數</td><td>局數 (例: 5.1)</td></tr>
+                        <tr><td class="py-1">W, 勝, 勝投</td><td>勝投</td></tr>
+                        <tr><td class="py-1">L, 敗, 敗投</td><td>敗投</td></tr>
+                        <tr><td class="py-1">H, 被安打, 安打</td><td>被安打</td></tr>
+                        <tr><td class="py-1">R, 失分</td><td>失分</td></tr>
+                        <tr><td class="py-1">ER, 責失</td><td>責失分</td></tr>
+                        <tr><td class="py-1">BB, 四壞, 保送</td><td>四壞保送</td></tr>
+                        <tr><td class="py-1">K, 三振</td><td>三振 (或 SO)</td></tr>
+                        <tr><td class="py-1">HR, 被全壘打</td><td>被全壘打</td></tr>
                     </table>
                 </div>
             </div>
@@ -483,7 +476,7 @@
             };
             const formData = ref({ ...defaultFormData });
 
-            // Fields (Same as before)
+            // Fields
             const battingFields = [
                 { key: 'PA', label: '打席 (PA)' }, { key: 'AB', label: '打數 (AB)' },
                 { key: 'H', label: '安打 (H)' }, { key: 'B2', label: '二壘打 (2B)' },
@@ -500,7 +493,7 @@
                 { key: 'HR_p', label: '被全壘打 (HR)' }
             ];
 
-            // Computed Properties (Same as before)
+            // Computed Properties
             const displayColumns = computed(() => {
                 if (currentTab.value === 'batting') return [{key:'AB',label:'AB'},{key:'H',label:'H'},{key:'HR',label:'HR'},{key:'RBI',label:'RBI'},{key:'AVG',label:'AVG'},{key:'OPS',label:'OPS'}];
                 return [{key:'IP',label:'IP'},{key:'H_p',label:'H'},{key:'ER',label:'ER'},{key:'SO_p',label:'K'},{key:'BB_p',label:'BB'},{key:'ERA',label:'ERA'},{key:'WHIP',label:'WHIP'}];
@@ -627,15 +620,64 @@
                         const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
                         if(!json.length) { showAlert('錯誤','無資料'); return; }
                         
+                        // Robust getter function
+                        const getVal = (row, keys) => {
+                            for (let key of keys) {
+                                if (row[key] !== undefined) return row[key];
+                            }
+                            const rowKeys = Object.keys(row);
+                            for (let key of keys) {
+                                const foundKey = rowKeys.find(k => k.toLowerCase().trim() === key.toLowerCase().trim());
+                                if (foundKey) return row[foundKey];
+                            }
+                            return 0; 
+                        };
+
+                        const getStringVal = (row, keys, defaultVal = '') => {
+                             const val = getVal(row, keys);
+                             return (val === 0 || val === undefined) ? defaultVal : String(val);
+                        }
+
                         newLogs = json.map(row => {
+                            let dateVal = getVal(row, ['Date', '日期', 'date']);
+                            if (typeof dateVal === 'number' && dateVal > 20000) {
+                                dateVal = new Date(Math.round((dateVal - 25569)*86400*1000)).toISOString().split('T')[0];
+                            } else if (!dateVal) {
+                                dateVal = new Date().toISOString().split('T')[0];
+                            } else {
+                                try { dateVal = new Date(dateVal).toISOString().split('T')[0]; } 
+                                catch(e) { dateVal = new Date().toISOString().split('T')[0]; }
+                            }
+
                             return { 
                                 type: currentTab.value, 
-                                date: row['日期'] || row['Date'] || new Date().toISOString().split('T')[0],
-                                gameName: row['比賽名稱'] || row['Game'] || '匯入',
-                                stadium: row['球場'] || row['Stadium'] || '',
-                                opponent: row['對手'] || row['Opponent'] || '',
-                                PA: row['PA']||0, AB: row['AB']||0, H: row['H']||0, B2: row['2B']||0, B3: row['3B']||0, HR: row['HR']||0, RBI: row['RBI']||0, BB: row['BB']||0, SO: row['SO']||0, SF: row['SF']||0, SB: row['SB']||0,
-                                IP: row['IP']||0, W: row['W']||0, L: row['L']||0, SV: row['SV']||0, H_p: row['H']||0, R: row['R']||0, ER: row['ER']||0, BB_p: row['BB']||0, SO_p: row['SO']||0, HR_p: row['HR']||0
+                                date: dateVal,
+                                gameName: getStringVal(row, ['Game', '比賽名稱', '比賽', 'Event'], '匯入賽事'),
+                                stadium: getStringVal(row, ['Stadium', '球場', '地點', 'Place'], ''),
+                                opponent: getStringVal(row, ['Opponent', '對手', 'VS'], ''),
+                                
+                                PA: Number(getVal(row, ['PA', '打席'])) || 0,
+                                AB: Number(getVal(row, ['AB', '打數'])) || 0,
+                                H: Number(getVal(row, ['H', '安打', '安'])) || 0,
+                                B2: Number(getVal(row, ['2B', '二壘打', '二安'])) || 0,
+                                B3: Number(getVal(row, ['3B', '三壘打', '三安'])) || 0,
+                                HR: Number(getVal(row, ['HR', '全壘打', '轟'])) || 0,
+                                RBI: Number(getVal(row, ['RBI', '打點'])) || 0,
+                                BB: Number(getVal(row, ['BB', '四壞', '保送'])) || 0,
+                                SO: Number(getVal(row, ['SO', 'K', '三振'])) || 0,
+                                SB: Number(getVal(row, ['SB', '盜壘'])) || 0,
+                                SF: Number(getVal(row, ['SF', '高飛犧牲', '犧飛'])) || 0,
+
+                                IP: Number(getVal(row, ['IP', '局數'])) || 0,
+                                W: Number(getVal(row, ['W', '勝', '勝投'])) || 0,
+                                L: Number(getVal(row, ['L', '敗', '敗投'])) || 0,
+                                SV: Number(getVal(row, ['SV', 'S', '救援', '救援成功'])) || 0,
+                                H_p: Number(getVal(row, ['H', '被安打', '安打'])) || 0, 
+                                R: Number(getVal(row, ['R', '失分'])) || 0,
+                                ER: Number(getVal(row, ['ER', '責失', '責失分'])) || 0,
+                                BB_p: Number(getVal(row, ['BB', '四壞', '保送'])) || 0,
+                                SO_p: Number(getVal(row, ['SO', 'K', '三振'])) || 0,
+                                HR_p: Number(getVal(row, ['HR', '被全壘打', '全壘打'])) || 0
                             }; 
                         });
                     }
@@ -643,17 +685,12 @@
                     if(isFirebaseAvailable) {
                         const batch = writeBatch(db);
                         newLogs.forEach(l => {
-                            // Ensure clean data for Firestore
                             const { id, ...cleanData } = l; 
                             batch.set(doc(collection(db,'artifacts',appId,'public','data','baseball_logs')), cleanData);
                         });
                         await batch.commit();
                     } else {
-                        // Local Mode: Merge strategy (Append new logs)
-                        // If JSON import often implies restore, we might want to replace or merge. 
-                        // Here we append new items with new IDs.
                         newLogs.forEach(l => { 
-                            // If it's a JSON restore, it might already have IDs, but best to regenerate for local consistency
                             l.id = Date.now() + Math.random(); 
                             logs.value.push(l); 
                         });
@@ -670,7 +707,7 @@
                 }
             }
 
-            // CRUD Operations (Same as before)
+            // CRUD Operations
             async function submitForm() {
                 const payload = { ...formData.value, type: currentTab.value };
                 if (isFirebaseAvailable && user.value) {
@@ -727,7 +764,7 @@
                 });
             }
 
-            // Utils (Same as before)
+            // Utils (Same)
             function convertIPtoOuts(ip) { const s = String(ip).split('.'); return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0); }
             function convertOutsToIP(outs) { return (outs % 3 === 0) ? Math.floor(outs/3) : parseFloat(`${Math.floor(outs/3)}.${outs%3}`); }
             function calculateStats(log) {
