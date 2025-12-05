@@ -723,13 +723,27 @@
 
                         newLogs = json.map(row => {
                             let dateVal = getVal(row, ['Date', '日期', 'date']);
+                            
+                            // 增強的日期判斷邏輯
                             if (typeof dateVal === 'number' && dateVal > 20000) {
-                                dateVal = new Date(Math.round((dateVal - 25569)*86400*1000)).toISOString().split('T')[0];
-                            } else if (!dateVal) {
-                                dateVal = new Date().toISOString().split('T')[0];
+                                // 處理 Excel 序列號日期 (例如 45286)
+                                dateVal = new Date(Math.round((dateVal - 25569) * 86400 * 1000)).toISOString().split('T')[0];
+                            } else if (typeof dateVal === 'string') {
+                                // 處理字串日期，將 '/' 或 '.' 統一替換為 '-' (例如 2025/12/25 或 2025.12.25 -> 2025-12-25)
+                                // 這樣可以確保 new Date() 能正確解析
+                                const standardizedDateStr = dateVal.replace(/\//g, '-').replace(/\./g, '-');
+                                const parsedDate = new Date(standardizedDateStr);
+                                
+                                // 檢查是否為有效日期
+                                if (!isNaN(parsedDate.getTime())) {
+                                    dateVal = parsedDate.toISOString().split('T')[0];
+                                } else {
+                                    // 解析失敗則使用今日
+                                    dateVal = new Date().toISOString().split('T')[0];
+                                }
                             } else {
-                                try { dateVal = new Date(dateVal).toISOString().split('T')[0]; } 
-                                catch(e) { dateVal = new Date().toISOString().split('T')[0]; }
+                                // 其他情況 (如空值) 使用今日
+                                dateVal = new Date().toISOString().split('T')[0];
                             }
 
                             return { 
