@@ -279,7 +279,7 @@
                             <td class="p-4 whitespace-nowrap text-retroText/60">{{ log.stadium || '-' }}</td>
                             <td class="p-4 whitespace-nowrap">{{ log.opponent }}</td>
                             <td v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center font-serif text-lg">
-                                {{ log[col.key] }}
+                                {{ formatDisplay(log[col.key]) }}
                             </td>
                             <td class="p-4 whitespace-nowrap text-right space-x-3 opacity-60 group-hover:opacity-100 transition-opacity">
                                 <button @click="editLog(log)" class="text-retroBlue hover:text-retroText font-bold underline decoration-2 decoration-retroBlue/30 hover:decoration-retroText">編輯</button>
@@ -287,7 +287,7 @@
                             </td>
                         </tr>
                         <tr v-if="filteredLogs.length === 0">
-                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 italic font-serif text-lg bg-retroPaper/20">
+                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 font-serif text-lg bg-retroPaper/20">
                                 <div class="mb-4 text-6xl opacity-20 transform rotate-12">⚾</div>
                                 <p>尚未有紀錄，請點擊上方按鈕開始您的野球日記。</p>
                                 <span class="text-xs text-retroGreen mt-4 block opacity-80 font-bold tracking-wide" v-if="isFirebaseMode">☁ 系統已連接雲端資料庫</span>
@@ -687,6 +687,16 @@
                 downloadAnchorNode.remove();
             }
 
+            // Updated Helper to parse different types of values
+            function parseValue(val) {
+                if (val === null || val === undefined || val === '') return null;
+                const strVal = String(val).trim();
+                if (strVal === '-' || strVal.toLowerCase() === 'n/a') return null;
+                const num = Number(strVal);
+                return isNaN(num) ? null : num;
+            }
+
+            // Handle File Upload
             function handleFileUpload(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -704,7 +714,7 @@
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
                         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
+                        const json = XLSX.utils.sheet_to_json(sheet, { defval: '' }); // defval='' to capture empty cells
                         if(!json.length) { showAlert('錯誤','無資料'); return; }
                         
                         const getVal = (row, keys) => {
@@ -714,35 +724,26 @@
                                 const foundKey = rowKeys.find(k => k.toLowerCase().trim() === key.toLowerCase().trim());
                                 if (foundKey) return row[foundKey];
                             }
-                            return 0; 
+                            return null; 
                         };
                         const getStringVal = (row, keys, defaultVal = '') => {
                              const val = getVal(row, keys);
-                             return (val === 0 || val === undefined) ? defaultVal : String(val);
+                             return (val === null || val === undefined) ? defaultVal : String(val);
                         }
 
                         newLogs = json.map(row => {
                             let dateVal = getVal(row, ['Date', '日期', 'date']);
-                            
-                            // 增強的日期判斷邏輯
                             if (typeof dateVal === 'number' && dateVal > 20000) {
-                                // 處理 Excel 序列號日期 (例如 45286)
                                 dateVal = new Date(Math.round((dateVal - 25569) * 86400 * 1000)).toISOString().split('T')[0];
                             } else if (typeof dateVal === 'string') {
-                                // 處理字串日期，將 '/' 或 '.' 統一替換為 '-' (例如 2025/12/25 或 2025.12.25 -> 2025-12-25)
-                                // 這樣可以確保 new Date() 能正確解析
                                 const standardizedDateStr = dateVal.replace(/\//g, '-').replace(/\./g, '-');
                                 const parsedDate = new Date(standardizedDateStr);
-                                
-                                // 檢查是否為有效日期
                                 if (!isNaN(parsedDate.getTime())) {
                                     dateVal = parsedDate.toISOString().split('T')[0];
                                 } else {
-                                    // 解析失敗則使用今日
                                     dateVal = new Date().toISOString().split('T')[0];
                                 }
                             } else {
-                                // 其他情況 (如空值) 使用今日
                                 dateVal = new Date().toISOString().split('T')[0];
                             }
 
@@ -752,9 +753,33 @@
                                 gameName: getStringVal(row, ['Game', '比賽名稱', '比賽', 'Event'], '匯入賽事'),
                                 stadium: getStringVal(row, ['Stadium', '球場', '地點', 'Place'], ''),
                                 opponent: getStringVal(row, ['Opponent', '對手', 'VS'], ''),
-                                PA: Number(getVal(row, ['PA', '打席'])) || 0, AB: Number(getVal(row, ['AB', '打數'])) || 0, H: Number(getVal(row, ['H', '安打', '安'])) || 0, B2: Number(getVal(row, ['2B', '二壘打', '二安'])) || 0, B3: Number(getVal(row, ['3B', '三壘打', '三安'])) || 0, HR: Number(getVal(row, ['HR', '全壘打', '轟'])) || 0, RBI: Number(getVal(row, ['RBI', '打點'])) || 0, BB: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO: Number(getVal(row, ['SO', 'K', '三振'])) || 0, SB: Number(getVal(row, ['SB', '盜壘'])) || 0, SF: Number(getVal(row, ['SF', '高飛犧牲', '犧飛'])) || 0,
-                                IP: Number(getVal(row, ['IP', '局數'])) || 0, W: Number(getVal(row, ['W', '勝', '勝投'])) || 0, L: Number(getVal(row, ['L', '敗', '敗投'])) || 0, SV: Number(getVal(row, ['SV', 'S', '救援', '救援成功'])) || 0, H_p: Number(getVal(row, ['H', '被安打', '安打'])) || 0, R: Number(getVal(row, ['R', '失分'])) || 0, ER: Number(getVal(row, ['ER', '責失', '責失分'])) || 0, BB_p: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO_p: Number(getVal(row, ['SO', 'K', '三振'])) || 0, HR_p: Number(getVal(row, ['HR', '被全壘打', '全壘打'])) || 0,
-                                NP: Number(getVal(row, ['NP', '投球數', 'PC'])) || 0, BF: Number(getVal(row, ['BF', '面對打席', '打席'])) || 0, AB_p: Number(getVal(row, ['AB', '被打數', '打數'])) || 0, WP: Number(getVal(row, ['WP', '暴投'])) || 0
+                                // Parsing with null handling
+                                PA: parseValue(getVal(row, ['PA', '打席'])), 
+                                AB: parseValue(getVal(row, ['AB', '打數'])), 
+                                H: parseValue(getVal(row, ['H', '安打', '安'])), 
+                                B2: parseValue(getVal(row, ['2B', '二壘打', '二安'])), 
+                                B3: parseValue(getVal(row, ['3B', '三壘打', '三安'])), 
+                                HR: parseValue(getVal(row, ['HR', '全壘打', '轟'])), 
+                                RBI: parseValue(getVal(row, ['RBI', '打點'])), 
+                                BB: parseValue(getVal(row, ['BB', '四壞', '保送'])), 
+                                SO: parseValue(getVal(row, ['SO', 'K', '三振'])), 
+                                SB: parseValue(getVal(row, ['SB', '盜壘'])), 
+                                SF: parseValue(getVal(row, ['SF', '高飛犧牲', '犧飛'])),
+
+                                IP: parseValue(getVal(row, ['IP', '局數'])), 
+                                W: parseValue(getVal(row, ['W', '勝', '勝投'])), 
+                                L: parseValue(getVal(row, ['L', '敗', '敗投'])), 
+                                SV: parseValue(getVal(row, ['SV', 'S', '救援', '救援成功'])), 
+                                H_p: parseValue(getVal(row, ['H', '被安打', '安打'])), 
+                                R: parseValue(getVal(row, ['R', '失分'])), 
+                                ER: parseValue(getVal(row, ['ER', '責失', '責失分'])), 
+                                BB_p: parseValue(getVal(row, ['BB', '四壞', '保送'])), 
+                                SO_p: parseValue(getVal(row, ['SO', 'K', '三振'])), 
+                                HR_p: parseValue(getVal(row, ['HR', '被全壘打', '全壘打'])),
+                                NP: parseValue(getVal(row, ['NP', '投球數', 'PC'])),
+                                BF: parseValue(getVal(row, ['BF', '面對打席', '打席'])),
+                                AB_p: parseValue(getVal(row, ['AB', '被打數', '打數'])),
+                                WP: parseValue(getVal(row, ['WP', '暴投']))
                             }; 
                         });
                     }
@@ -776,6 +801,14 @@
 
             async function submitForm() {
                 const payload = { ...formData.value, type: currentTab.value };
+                // Ensure nulls for empty inputs if using type="number" (which returns "" for empty)
+                // Actually Vue's v-model.number converts "" to "" (string). 
+                // Let's clean payload to use 0 or null? 
+                // For manual entry, let's default to 0 to keep it simple, or handle nulls.
+                // Since input fields are type="number", empty is "".
+                // Let's treat manual empty input as 0 for now, or keep it as null?
+                // User asked for "blank display" for imported data. Manual data usually implies entry.
+                // Let's leave them as is.
                 if (isFirebaseAvailable && user.value) {
                     try {
                         const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'baseball_logs');
@@ -815,11 +848,12 @@
                 });
             }
 
-            // Fixed: Correctly handles deselecting by iterating filtered items
+            // Selection Logic
             function toggleSelectAll(e) {
                 if (e.target.checked) {
                     filteredLogs.value.forEach(l => selectedIds.value.add(l.id));
                 } else {
+                    // Only remove current filtered logs from selection (allow keeping selection across pages/searches if needed, but simpler to just clear visible)
                     filteredLogs.value.forEach(l => selectedIds.value.delete(l.id));
                 }
             }
@@ -833,28 +867,64 @@
             function showAlert(t,m,e=false){ dialog.value={show:true,title:t,message:m,icon:e?'❌':'✅',isConfirm:false,confirmText:'好',onConfirm:null}; }
             function handleDialogConfirm(){ if(dialog.value.onConfirm) dialog.value.onConfirm(); dialog.value.show=false; }
 
-            function convertIPtoOuts(ip) { const s = String(ip).split('.'); return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0); }
+            function formatDisplay(val) {
+                return (val === null || val === undefined || val === '') ? '' : val;
+            }
+
+            function convertIPtoOuts(ip) { 
+                if (ip === null || ip === undefined) return 0;
+                const s = String(ip).split('.'); 
+                return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0); 
+            }
             function convertOutsToIP(outs) { return (outs % 3 === 0) ? Math.floor(outs/3) : parseFloat(`${Math.floor(outs/3)}.${outs%3}`); }
+            
             function calculateStats(log) {
                 if (log.type === 'batting') {
-                    const avg = log.AB ? log.H / log.AB : 0;
-                    const single = log.H - (log.B2||0) - (log.B3||0) - (log.HR||0);
+                    const avg = (log.AB && log.AB > 0) ? (log.H||0) / log.AB : 0;
+                    const single = (log.H||0) - (log.B2||0) - (log.B3||0) - (log.HR||0);
                     const tb = single + 2*(log.B2||0) + 3*(log.B3||0) + 4*(log.HR||0);
-                    const slg = log.AB ? tb / log.AB : 0;
-                    const obp = log.PA ? (log.H + log.BB) / log.PA : 0;
+                    const slg = (log.AB && log.AB > 0) ? tb / log.AB : 0;
+                    const obp = (log.PA && log.PA > 0) ? ((log.H||0) + (log.BB||0)) / log.PA : 0;
                     return { AVG: avg.toFixed(3).replace(/^0+/, ''), OPS: (obp+slg).toFixed(3).replace(/^0+/, '') };
                 } else {
                     const outs = convertIPtoOuts(log.IP);
-                    const era = outs ? (log.ER*9)/(outs/3) : 0;
-                    const whip = outs ? (log.BB_p+log.H_p)/(outs/3) : 0;
+                    const era = outs > 0 ? ((log.ER||0)*9)/(outs/3) : 0;
+                    const whip = outs > 0 ? ((log.BB_p||0)+(log.H_p||0))/(outs/3) : 0;
                     return { ERA: era.toFixed(2), WHIP: whip.toFixed(2) };
                 }
             }
+            
             function calculateTotal(key) {
                 if (['AVG','OPS','ERA','WHIP'].includes(key)) return '---';
-                let total = filteredLogs.value.reduce((s, i) => s + (Number(i[key])||0), 0);
+                
+                let total = 0;
+                let count = 0; // Used for pure average if needed, but here we mostly do sums
+
+                // Pitching Rate Stats Calculation (Aggregate)
+                if (currentTab.value === 'pitching') {
+                     const data = filteredLogs.value;
+                     const totalOuts = data.reduce((s, i) => s + convertIPtoOuts(i.IP), 0);
+                     
+                     if (key === 'ERA') {
+                         const totalER = data.reduce((s, i) => s + (i.ER || 0), 0); // Treat null ER as 0 for sum? Or ignore game? 
+                         // Standard: Cumulative ERA uses total ER. If ER is null, it adds 0.
+                         return totalOuts === 0 ? '0.00' : (totalER * 9 / (totalOuts/3)).toFixed(2);
+                     }
+                     if (key === 'WHIP') {
+                         const totalWalksHits = data.reduce((s, i) => s + (i.BB_p || 0) + (i.H_p || 0), 0);
+                         return totalOuts === 0 ? '0.00' : (totalWalksHits / (totalOuts/3)).toFixed(2);
+                     }
+                }
+
+                // General Summation Logic (with null check)
+                total = filteredLogs.value.reduce((s, i) => {
+                    const val = i[key];
+                    return s + (typeof val === 'number' ? val : 0);
+                }, 0);
+
                 return key === 'IP' ? convertOutsToIP(filteredLogs.value.reduce((s,i)=>s+convertIPtoOuts(i.IP),0)) : total;
             }
+            
             function calculateGroupStat(groupLogs) {
                 if (currentTab.value === 'batting') { const h = groupLogs.reduce((s,l)=>s+(l.H||0),0); const ab = groupLogs.reduce((s,l)=>s+(l.AB||0),0); return ab ? h/ab : 0; } 
                 else { const er = groupLogs.reduce((s,l)=>s+(l.ER||0),0); const outs = groupLogs.reduce((s,l)=>s+convertIPtoOuts(l.IP),0); return outs ? er*9/(outs/3) : 0; }
@@ -986,7 +1056,7 @@
                 currentTab, showForm, showHelp, isEditing, formData, searchQuery, logs, selectedIds, chartMode,
                 battingFields, pitchingFields, displayColumns, filteredLogs, mainStat, secondaryStat, isFirebaseMode,
                 submitForm, editLog, deleteLog, deleteSelected, resetForm, handleFileUpload, calculateTotal, sortBy,
-                dialog, handleDialogConfirm, exportData, chartInnerWidth, toggleSelect, toggleSelectAll
+                dialog, handleDialogConfirm, exportData, chartInnerWidth, toggleSelect, toggleSelectAll, formatDisplay
             };
         }
     }).mount('#app');
