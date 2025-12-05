@@ -60,8 +60,6 @@
             color: #736357;
         }
 
-        /* (已移除左側裝訂線裝飾) */
-
         /* ----- 按鈕設計 ----- */
 
         /* 皮革標籤風格 (實心) */
@@ -164,7 +162,7 @@
         <div class="mb-6 md:mb-0 text-center md:text-left">
             <h1 class="font-serif text-4xl md:text-5xl font-black tracking-wider text-retroText relative z-10">小魏的野球數據</h1>
             <div class="relative inline-block mt-2">
-                <!-- 標題裝飾底線：現在位於副標題容器內，寬度會跟隨文字 -->
+                <!-- 標題裝飾底線 -->
                 <div class="absolute bottom-1 left-0 right-0 h-3 bg-retroGreen/20 -skew-x-12 transform"></div>
                 <p class="text-sm tracking-[0.2em] text-retroText/60 uppercase font-bold font-sans relative z-10">Baseball Logs Analytics</p>
             </div>
@@ -202,7 +200,6 @@
             <div class="card col-span-2 relative h-72 flex flex-col border-2 border-retroText/10 bg-retroWhite/80">
                 <!-- 像圖釘一樣固定住 -->
                 <div class="absolute -top-3 -right-3 text-2xl text-retroText/30 transform rotate-355">📌</div>
-            
 
                 <div class="flex justify-between items-center mb-4 z-10 px-2">
                     <h3 class="font-serif font-black text-retroText text-lg flex items-center gap-2">
@@ -214,8 +211,11 @@
                         <option value="game">🏆 依賽事</option>
                     </select>
                 </div>
-                <div class="relative flex-grow w-full h-full min-h-0 bg-white border border-retroText/5 rounded-sm p-2">
-                    <canvas id="trendChart"></canvas>
+                <!-- 修改：增加 overflow-x-auto 以支援橫向滾動，並使用自定義變數控制內部寬度 -->
+                <div class="relative flex-grow w-full h-full min-h-0 bg-white border border-retroText/5 rounded-sm p-2 overflow-x-auto custom-scroll">
+                    <div class="h-full relative" :style="{ width: chartInnerWidth }">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
@@ -249,22 +249,24 @@
         </section>
 
         <!-- Data Table -->
+        <!-- 修改：限制高度 max-h-[500px] 並開啟 overflow-y-auto -->
         <section class="card p-0 rounded-sm border-2 border-retroText/10 overflow-hidden bg-retroWhite">
-            <div class="overflow-x-auto custom-scroll">
+            <div class="overflow-x-auto overflow-y-auto custom-scroll max-h-[500px]">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-retroText/5 text-retroText text-sm font-serif font-black uppercase tracking-wider border-b-2 border-retroText/10 border-dashed">
-                            <th class="p-4 w-12 text-center bg-retroPaper/50">
+                        <!-- 修改：使用 sticky top-0 固定表頭，並將背景色設為不透明 (retroPaper/F9F4EB) 以遮擋內容 -->
+                        <tr class="bg-retroPaper text-retroText text-sm font-serif font-black uppercase tracking-wider border-b-2 border-retroText/10 border-dashed sticky top-0 z-10">
+                            <th class="p-4 w-12 text-center bg-retroPaper">
                                 <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" title="全選">
                             </th>
-                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">日期</th>
-                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">比賽名稱</th>
-                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">球場</th>
-                            <th class="p-4 whitespace-nowrap bg-retroPaper/50">對手</th>
-                            <th v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center cursor-pointer hover:bg-retroText/10 bg-retroPaper/50" @click="sortBy(col.key)">
+                            <th class="p-4 whitespace-nowrap bg-retroPaper">日期</th>
+                            <th class="p-4 whitespace-nowrap bg-retroPaper">比賽名稱</th>
+                            <th class="p-4 whitespace-nowrap bg-retroPaper">球場</th>
+                            <th class="p-4 whitespace-nowrap bg-retroPaper">對手</th>
+                            <th v-for="col in displayColumns" :key="col.key" class="p-4 whitespace-nowrap text-center cursor-pointer hover:bg-retroText/10 bg-retroPaper" @click="sortBy(col.key)">
                                 {{ col.label }}
                             </th>
-                            <th class="p-4 whitespace-nowrap text-right bg-retroPaper/50">操作</th>
+                            <th class="p-4 whitespace-nowrap text-right bg-retroPaper">操作</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-retroText/10 divide-dashed text-sm font-sans font-bold text-retroText/80">
@@ -285,7 +287,7 @@
                             </td>
                         </tr>
                         <tr v-if="filteredLogs.length === 0">
-                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 italic font-serif text-lg bg-retroPaper/20">
+                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 font-serif text-lg bg-retroPaper/20">
                                 <div class="mb-4 text-6xl opacity-20 transform rotate-12">⚾</div>
                                 <p>尚未有紀錄，請點擊上方按鈕開始您的野球日記。</p>
                                 <span class="text-xs text-retroGreen mt-4 block opacity-80 font-bold tracking-wide" v-if="isFirebaseMode">☁ 系統已連接雲端資料庫</span>
@@ -293,13 +295,14 @@
                             </td>
                         </tr>
                     </tbody>
-                    <tfoot v-if="filteredLogs.length > 0" class="bg-retroText/5 font-black text-retroText border-t-2 border-retroText/20">
+                    <!-- 修改：Footer 也可以 Sticky -->
+                    <tfoot v-if="filteredLogs.length > 0" class="bg-retroText/5 font-black text-retroText border-t-2 border-retroText/20 sticky bottom-0 z-10">
                         <tr>
-                            <td colspan="5" class="p-4 text-right font-serif text-base">總計 / 平均</td>
-                            <td v-for="col in displayColumns" :key="col.key" class="p-4 text-center font-sans text-base">
+                            <td colspan="5" class="p-4 text-right font-serif text-base bg-retroPaper/90 backdrop-blur">總計 / 平均</td>
+                            <td v-for="col in displayColumns" :key="col.key" class="p-4 text-center font-sans text-base bg-retroPaper/90 backdrop-blur">
                                 {{ calculateTotal(col.key) }}
                             </td>
-                            <td></td>
+                            <td class="bg-retroPaper/90 backdrop-blur"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -463,6 +466,11 @@
                         <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">IP, 局數</td><td class="p-2 border-b border-retroText/5 border-dashed">局數</td></tr>
                         <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">W, 勝</td><td class="p-2 border-b border-retroText/5 border-dashed">勝投</td></tr>
                         <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">H, 被安打</td><td class="p-2 border-b border-retroText/5 border-dashed">被安打</td></tr>
+                        <!-- 新增欄位說明 -->
+                         <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">NP, 投球數</td><td class="p-2 border-b border-retroText/5 border-dashed">投球數</td></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">BF, 面對打席</td><td class="p-2 border-b border-retroText/5 border-dashed">面對打席</td></tr>
+                        <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">AB, 被打數</td><td class="p-2 border-b border-retroText/5 border-dashed">被打數</td></tr>
+                         <tr><td class="p-2 border-b border-retroText/5 border-dashed font-bold">WP, 暴投</td><td class="p-2 border-b border-retroText/5 border-dashed">暴投</td></tr>
                     </table>
                 </div>
             </div>
@@ -535,6 +543,7 @@
             const logs = ref([]);
             const selectedIds = ref(new Set());
             const chartMode = ref('trend');
+            const chartInnerWidth = ref('100%');
             
             const dialog = ref({ show: false, title: '', message: '', icon: '', isConfirm: false, confirmText: '', onConfirm: null });
 
@@ -545,7 +554,8 @@
             const defaultFormData = {
                 date: new Date().toISOString().split('T')[0], gameName: '', stadium: '', opponent: '',
                 PA: 0, AB: 0, H: 0, B2: 0, B3: 0, HR: 0, RBI: 0, BB: 0, SO: 0, SF: 0, SB: 0,
-                IP: 0, H_p: 0, R: 0, ER: 0, BB_p: 0, SO_p: 0, HR_p: 0, W: 0, L: 0, SV: 0
+                IP: 0, H_p: 0, R: 0, ER: 0, BB_p: 0, SO_p: 0, HR_p: 0, W: 0, L: 0, SV: 0,
+                NP: 0, BF: 0, AB_p: 0, WP: 0
             };
             const formData = ref({ ...defaultFormData });
 
@@ -562,12 +572,32 @@
                 { key: 'IP', label: '局數 (IP)' }, { key: 'H_p', label: '被安打 (H)' },
                 { key: 'R', label: '失分 (R)' }, { key: 'ER', label: '責失 (ER)' },
                 { key: 'BB_p', label: '四壞 (BB)' }, { key: 'SO_p', label: '三振 (K)' },
-                { key: 'HR_p', label: '被全壘打 (HR)' }
+                { key: 'HR_p', label: '被全壘打 (HR)' },
+                { key: 'NP', label: '投球數 (NP)' },
+                { key: 'BF', label: '面對打席 (BF)' },
+                { key: 'AB_p', label: '被打數 (AB)' },
+                { key: 'WP', label: '暴投 (WP)' }
             ];
 
             const displayColumns = computed(() => {
-                if (currentTab.value === 'batting') return [{key:'AB',label:'AB'},{key:'H',label:'H'},{key:'HR',label:'HR'},{key:'RBI',label:'RBI'},{key:'AVG',label:'AVG'},{key:'OPS',label:'OPS'}];
-                return [{key:'IP',label:'IP'},{key:'H_p',label:'H'},{key:'ER',label:'ER'},{key:'SO_p',label:'K'},{key:'BB_p',label:'BB'},{key:'ERA',label:'ERA'},{key:'WHIP',label:'WHIP'}];
+                if (currentTab.value === 'batting') return [
+                    {key:'AB',label:'AB'},
+                    {key:'H',label:'H'},
+                    {key:'HR',label:'HR'},
+                    {key:'RBI',label:'RBI'},
+                    {key:'SB',label:'SB'}, 
+                    {key:'AVG',label:'AVG'},
+                    {key:'OPS',label:'OPS'}
+                ];
+                return [
+                    {key:'IP',label:'IP'},
+                    {key:'NP',label:'NP'},
+                    {key:'BF',label:'BF'},
+                    {key:'AB_p',label:'AB'},
+                    {key:'WP',label:'WP'},
+                    {key:'ERA',label:'ERA'},
+                    {key:'WHIP',label:'WHIP'}
+                ];
             });
 
             const filteredLogs = computed(() => {
@@ -709,7 +739,8 @@
                                 stadium: getStringVal(row, ['Stadium', '球場', '地點', 'Place'], ''),
                                 opponent: getStringVal(row, ['Opponent', '對手', 'VS'], ''),
                                 PA: Number(getVal(row, ['PA', '打席'])) || 0, AB: Number(getVal(row, ['AB', '打數'])) || 0, H: Number(getVal(row, ['H', '安打', '安'])) || 0, B2: Number(getVal(row, ['2B', '二壘打', '二安'])) || 0, B3: Number(getVal(row, ['3B', '三壘打', '三安'])) || 0, HR: Number(getVal(row, ['HR', '全壘打', '轟'])) || 0, RBI: Number(getVal(row, ['RBI', '打點'])) || 0, BB: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO: Number(getVal(row, ['SO', 'K', '三振'])) || 0, SB: Number(getVal(row, ['SB', '盜壘'])) || 0, SF: Number(getVal(row, ['SF', '高飛犧牲', '犧飛'])) || 0,
-                                IP: Number(getVal(row, ['IP', '局數'])) || 0, W: Number(getVal(row, ['W', '勝', '勝投'])) || 0, L: Number(getVal(row, ['L', '敗', '敗投'])) || 0, SV: Number(getVal(row, ['SV', 'S', '救援', '救援成功'])) || 0, H_p: Number(getVal(row, ['H', '被安打', '安打'])) || 0, R: Number(getVal(row, ['R', '失分'])) || 0, ER: Number(getVal(row, ['ER', '責失', '責失分'])) || 0, BB_p: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO_p: Number(getVal(row, ['SO', 'K', '三振'])) || 0, HR_p: Number(getVal(row, ['HR', '被全壘打', '全壘打'])) || 0
+                                IP: Number(getVal(row, ['IP', '局數'])) || 0, W: Number(getVal(row, ['W', '勝', '勝投'])) || 0, L: Number(getVal(row, ['L', '敗', '敗投'])) || 0, SV: Number(getVal(row, ['SV', 'S', '救援', '救援成功'])) || 0, H_p: Number(getVal(row, ['H', '被安打', '安打'])) || 0, R: Number(getVal(row, ['R', '失分'])) || 0, ER: Number(getVal(row, ['ER', '責失', '責失分'])) || 0, BB_p: Number(getVal(row, ['BB', '四壞', '保送'])) || 0, SO_p: Number(getVal(row, ['SO', 'K', '三振'])) || 0, HR_p: Number(getVal(row, ['HR', '被全壘打', '全壘打'])) || 0,
+                                NP: Number(getVal(row, ['NP', '投球數', 'PC'])) || 0, BF: Number(getVal(row, ['BF', '面對打席', '打席'])) || 0, AB_p: Number(getVal(row, ['AB', '被打數', '打數'])) || 0, WP: Number(getVal(row, ['WP', '暴投'])) || 0
                             }; 
                         });
                     }
@@ -836,6 +867,13 @@
                         chartType = 'bar';
                     }
                     
+                    // Dynamic Chart Width Calculation for Scrolling
+                    if (labels.length > 15) {
+                        chartInnerWidth.value = `${labels.length * 60}px`; // 60px per point
+                    } else {
+                        chartInnerWidth.value = '100%';
+                    }
+
                     trendChartInstance = new Chart(ctxTrend, {
                         type: chartType,
                         data: {
@@ -887,12 +925,9 @@
                             l2=['勝','敗','救援']; d2=[d.reduce((s,i)=>s+(i.W||0),0), d.reduce((s,i)=>s+(i.L||0),0), d.reduce((s,i)=>s+(i.SV||0),0)];
                         }
 
-                        // Retro Color Palette for Charts
-                        const retroColors = ['#8CA694', '#88A6B0', '#D97C6E', '#736357'];
-
                         distChart1Instance = new Chart(ctxDist1, { 
                             type: 'doughnut', 
-                            data: { labels: l1, datasets: [{ data: d1, backgroundColor: retroColors, borderColor: '#F2E8D5', borderWidth: 2 }] }, 
+                            data: { labels: l1, datasets: [{ data: d1, backgroundColor: ['#8CA694','#88A6B0','#D97C6E','#736357'], borderColor: '#F2E8D5', borderWidth: 2 }] }, 
                             options: { 
                                 responsive:true, maintainAspectRatio:false, 
                                 plugins:{ 
@@ -923,7 +958,7 @@
                 currentTab, showForm, showHelp, isEditing, formData, searchQuery, logs, selectedIds, chartMode,
                 battingFields, pitchingFields, displayColumns, filteredLogs, mainStat, secondaryStat, isFirebaseMode,
                 submitForm, editLog, deleteLog, deleteSelected, resetForm, handleFileUpload, calculateTotal, sortBy,
-                dialog, handleDialogConfirm, exportData
+                dialog, handleDialogConfirm, exportData, chartInnerWidth
             };
         }
     }).mount('#app');
@@ -931,8 +966,3 @@
 
 </body>
 </html>
-
-
-
-
-
