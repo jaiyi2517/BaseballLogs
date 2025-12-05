@@ -287,7 +287,7 @@
                             </td>
                         </tr>
                         <tr v-if="filteredLogs.length === 0">
-                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 font-serif text-lg bg-retroPaper/20">
+                            <td :colspan="displayColumns.length + 6" class="p-16 text-center text-retroText/60 italic font-serif text-lg bg-retroPaper/20">
                                 <div class="mb-4 text-6xl opacity-20 transform rotate-12">⚾</div>
                                 <p>尚未有紀錄，請點擊上方按鈕開始您的野球日記。</p>
                                 <span class="text-xs text-retroGreen mt-4 block opacity-80 font-bold tracking-wide" v-if="isFirebaseMode">☁ 系統已連接雲端資料庫</span>
@@ -815,6 +815,24 @@
                 });
             }
 
+            // Fixed: Correctly handles deselecting by iterating filtered items
+            function toggleSelectAll(e) {
+                if (e.target.checked) {
+                    filteredLogs.value.forEach(l => selectedIds.value.add(l.id));
+                } else {
+                    filteredLogs.value.forEach(l => selectedIds.value.delete(l.id));
+                }
+            }
+
+            function toggleSelect(id) {
+                if (selectedIds.value.has(id)) selectedIds.value.delete(id);
+                else selectedIds.value.add(id);
+            }
+
+            function showConfirm(t,m,cb){ dialog.value={show:true,title:t,message:m,icon:'🗑️',isConfirm:true,confirmText:'確認',onConfirm:cb}; }
+            function showAlert(t,m,e=false){ dialog.value={show:true,title:t,message:m,icon:e?'❌':'✅',isConfirm:false,confirmText:'好',onConfirm:null}; }
+            function handleDialogConfirm(){ if(dialog.value.onConfirm) dialog.value.onConfirm(); dialog.value.show=false; }
+
             function convertIPtoOuts(ip) { const s = String(ip).split('.'); return (parseInt(s[0])*3) + (s[1]?parseInt(s[1]):0); }
             function convertOutsToIP(outs) { return (outs % 3 === 0) ? Math.floor(outs/3) : parseFloat(`${Math.floor(outs/3)}.${outs%3}`); }
             function calculateStats(log) {
@@ -844,12 +862,8 @@
             function sortBy(k){ logs.value.sort((a,b)=>(b[k]||0)-(a[k]||0)); }
             function editLog(l){ formData.value={...l}; currentTab.value=l.type; isEditing.value=true; showForm.value=true; }
             function resetForm(){ formData.value={...defaultFormData, date: new Date().toISOString().split('T')[0]}; }
-            function toggleSelectAll(e){ if(e.target.checked) filteredLogs.value.forEach(l=>selectedIds.value.add(l.id)); else selectedIds.value.forEach(l=>selectedIds.value.delete(l.id)); }
-            function toggleSelect(id){ if(selectedIds.value.has(id)) selectedIds.value.delete(id); else selectedIds.value.add(id); }
-            function showConfirm(t,m,cb){ dialog.value={show:true,title:t,message:m,icon:'🗑️',isConfirm:true,confirmText:'確認',onConfirm:cb}; }
-            function showAlert(t,m,e=false){ dialog.value={show:true,title:t,message:m,icon:e?'❌':'✅',isConfirm:false,confirmText:'好',onConfirm:null}; }
-            function handleDialogConfirm(){ if(dialog.value.onConfirm) dialog.value.onConfirm(); dialog.value.show=false; }
-
+            
+            // Chart Rendering
             function renderCharts() {
                 nextTick(() => {
                     const ctxTrend = document.getElementById('trendChart');
@@ -972,7 +986,7 @@
                 currentTab, showForm, showHelp, isEditing, formData, searchQuery, logs, selectedIds, chartMode,
                 battingFields, pitchingFields, displayColumns, filteredLogs, mainStat, secondaryStat, isFirebaseMode,
                 submitForm, editLog, deleteLog, deleteSelected, resetForm, handleFileUpload, calculateTotal, sortBy,
-                dialog, handleDialogConfirm, exportData, chartInnerWidth
+                dialog, handleDialogConfirm, exportData, chartInnerWidth, toggleSelect, toggleSelectAll
             };
         }
     }).mount('#app');
